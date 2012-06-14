@@ -24,7 +24,7 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 
 		this
 			.fire('movestart')
-			.fire('zoomstart');
+			.fire('zoomstart', { center: center, zoom: zoom });
 
 		//if Foreground layer doesn't have many tiles but bg layer does, keep the existing bg layer
 		if (this._tileBg && this._getLoadedTilesPercentage(this._tileBg) > 0.5 && this._getLoadedTilesPercentage(this._tilePane) < 0.5) {
@@ -114,13 +114,6 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 
 		var options = {};
 		options[transform] = scaleStr + ' ' + tileBg.style[transform];
-
-		origin = origin.subtract(this._size);
-		this._pathRoot.style[L.Transition.DURATION] = '0.25s';
-		this._pathRoot.style[L.Transition.EASING] = 'cubic-bezier(0.25,0.1,0.25,0.75)';
-		this._pathRoot.style[L.Transition.PROPERTY] = this._tileBg.transition._dasherize(L.DomUtil.TRANSFORM);
-		this._pathRoot.style[L.DomUtil.TRANSFORM] = L.DomUtil.getScaleString(scale, origin) + ' ' + this._pathRoot.style[L.DomUtil.TRANSFORM];
-
 		tileBg.transition.run(options);
 	},
 
