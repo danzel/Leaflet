@@ -39,7 +39,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			for (var j = 0; j < clustered.length; j++) {
 				var c = clustered[j];
 				if (this._sqDist(xp, c.center) <= clusterRadiusSqrd) {
-					c.add(l);
+					c.add(l, xp);
 					used = true;
 					break;
 				}
@@ -48,9 +48,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				for (var j = 0 ; j < unclustered.length; j++) {
 					if (this._sqDist(xp, unclustered[j]._phax) <= clusterRadiusSqrd) {
 						//Create a new cluster with these 2
-						unclustered[j]._icon.style.opacity = 0.5;
-						unclustered[j]._shadow.style.opacity = 0.5;
-						clustered.push(new L.MarkerCluster(xp, unclustered[j]));
+						clustered.push(new L.MarkerCluster(this, l, xp, unclustered[j], unclustered[j]._phax));
 						unclustered.splice(j, 1);
 						used = true;
 						break;
@@ -60,14 +58,18 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 					unclustered.push(l);
 				}
 			}
-
-			if (used) {
-				l._icon.style.opacity = 0.5;
-				l._shadow.style.opacity = 0.5;
-			}
 		}
 		console.log('made ' + clustered.length + ' clusters');
 
+		//HACK
+		this._map._mapPane.className += ' leaflet-zoom-anim';
+
+		//Animate all of the markers in the clusters to move to their cluster center point
+		for (var i = 0; i < clustered.length; i++) {
+			var c = clustered[i];
+
+			c.startAnimation();
+		}
 
 		/*
 		//Work out who should get clustered
@@ -103,28 +105,41 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	onAdd: function (map) {
 		L.FeatureGroup.prototype.onAdd.call(this, map); // LayerGroup
 
-		this.generateClusters();
+		//this.generateClusters();
 	}
 
 });
 
 L.MarkerCluster = L.Class.extend({
-	initialize: function (a, b) {
+	initialize: function (group, a, apos, b, bpos) {
+		this._group = group;
+
 		this._markers = [a, b];
 
-		this._minX = this._maxX = a.x;
-		this._minY = this._maxY = a.y;
-		this.center = new L.Point(a.x, a.y);
+		this._minX = this._maxX = apos.x;
+		this._minY = this._maxY = apos.y;
+		this.center = apos.clone();
 
-		this._recalculateCenter(b);
+		this._recalculateCenter(bpos);
 	},
 
-	add: function (new1) {
+	add: function (new1, pos) {
 		this._markers.push(new1);
 
-		this._recalculateCenter(new1);
+		this._recalculateCenter(pos);
 	},
 
+	startAnimation: function () {
+		var markers = this._markers;
+
+		var center = this.center._round()._subtract(this._group._map._initialTopLeftPoint);
+		for (var i = 0; i < markers.length; i++) {
+			var m = markers[i];
+
+			m.setOpacity(0.5); //Hack to see which is which
+			m._setPos(center);
+		}
+	},
 	_recalculateCenter: function (b) {
 
 		if (b.x < this._minX) {

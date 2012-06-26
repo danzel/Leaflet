@@ -16,6 +16,7 @@
 
 	<div id="map"></div>
 	<button id="populate">Populate with 10 markers</button>
+	<button id="cluster">cluster</button>
 
 	<script type="text/javascript">
 
@@ -43,7 +44,9 @@
 		map.addLayer(markers);
 
 		L.DomUtil.get('populate').onclick = populate;
+		L.DomUtil.get('cluster').onclick = function () { markers.generateClusters(); };
 
+		setTimeout(function () { markers.generateClusters(); }, 2000);
 //		function logEvent(e) { console.log(e.type); }
 //
 //		map.on('movestart', logEvent);
