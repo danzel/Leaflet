@@ -11,6 +11,13 @@
 	<link rel="stylesheet" href="../css/screen.css" />
 
 	<script src="../leaflet-include.js"></script>
+	<style type="text/css">
+		.hax-icon {
+			text-align: center;
+			border: 1px black solid;
+			background-color: white;
+		}
+	</style>
 </head>
 <body>
 
@@ -46,7 +53,7 @@
 		L.DomUtil.get('populate').onclick = populate;
 		L.DomUtil.get('cluster').onclick = function () { markers.generateClusters(); };
 
-		setTimeout(function () { markers.generateClusters(); }, 2000);
+		//setTimeout(function () { markers.generateClusters(); }, 2000);
 //		function logEvent(e) { console.log(e.type); }
 //
 //		map.on('movestart', logEvent);

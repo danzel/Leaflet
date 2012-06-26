@@ -11,6 +11,7 @@ L.DivIcon = L.Icon.extend({
 	},
 
 	createIcon: function () {
+<<<<<<< HEAD
 		var div = document.createElement('div'),
 		    options = this.options;
 
@@ -23,6 +24,11 @@ L.DivIcon = L.Icon.extend({
 					(-options.bgPos.x) + 'px ' + (-options.bgPos.y) + 'px';
 		}
 
+=======
+		var div = document.createElement('div');
+		if (this.options.innerHTML)
+			div.innerHTML = this.options.innerHTML;
+>>>>>>> Move MarkerCluster out to its own file. Hack DivIcon so I can show something useful in it. Remove Markers from the map after merging them.
 		this._setIconStyles(div, 'icon');
 		return div;
 	},

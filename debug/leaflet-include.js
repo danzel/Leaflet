@@ -66,7 +66,9 @@
 		'layer/marker/Marker.js',
 		'layer/marker/Marker.Popup.js',
 		'layer/marker/Marker.Drag.js',
+
 		'layer/marker/MarkerClusterGroup.js',
+		'layer/marker/MarkerCluster.js',
 
 		'layer/vector/Path.js',
 		'layer/vector/Path.Popup.js',

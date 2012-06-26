@@ -71,35 +71,20 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			c.startAnimation();
 		}
 
-		/*
-		//Work out who should get clustered
-		var distances = [];
-		for (var x = 0; x < layers.length - 1; x++) {
-			var xp = this._map.project(layers[x].getLatLng());
-			for (var y = x + 1; y < layers.length; y++) {
-				var dist = xp.distanceTo(this._map.project(layers[y].getLatLng()));
-				if (dist < distanceToCluster) {
-					distances.push({ dist: dist, a: x, b: y });
-				}
+		//TODO: Use the transition stuff to make this more reliable
+		var map = this._map;
+		setTimeout(function () {
+
+			//HACK
+			map._mapPane.className = map._mapPane.className.replace('leaflet-zoom-anim', '');
+
+			//this.createClusters();
+			for (var i = 0; i < clustered.length; i++) {
+				var c = clustered[i];
+
+				c.createCluster();
 			}
-		}
-
-		//Sort so closest are at the start
-		distances.sort(function (a, b) { return a.dist - b.dist; });
-
-		var clusters = [];
-
-		//Now cluster them
-		for (var i = 0; i < distances.length; i++) {
-			var d = distances[i];
-
-			//Check if we should be in an existing cluster
-			for (var j = 0; j < clusters.length; j++) {
-				var c = clusters[j];
-
-				if (c.distanceTo(
-			}
-		}*/
+		}, 250);
 	},
 
 	onAdd: function (map) {
@@ -108,54 +93,4 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		//this.generateClusters();
 	}
 
-});
-
-L.MarkerCluster = L.Class.extend({
-	initialize: function (group, a, apos, b, bpos) {
-		this._group = group;
-
-		this._markers = [a, b];
-
-		this._minX = this._maxX = apos.x;
-		this._minY = this._maxY = apos.y;
-		this.center = apos.clone();
-
-		this._recalculateCenter(bpos);
-	},
-
-	add: function (new1, pos) {
-		this._markers.push(new1);
-
-		this._recalculateCenter(pos);
-	},
-
-	startAnimation: function () {
-		var markers = this._markers;
-
-		var center = this.center._round()._subtract(this._group._map._initialTopLeftPoint);
-		for (var i = 0; i < markers.length; i++) {
-			var m = markers[i];
-
-			m.setOpacity(0.5); //Hack to see which is which
-			m._setPos(center);
-		}
-	},
-	_recalculateCenter: function (b) {
-
-		if (b.x < this._minX) {
-			this._minX = b.x;
-			this.center.x = (this._minX + this._maxX) / 2;
-		} else if (b.x > this._maxX) {
-			this._maxX = b.x;
-			this.center.x = (this._minX + this._maxX) / 2;
-		}
-
-		if (b.y < this._minY) {
-			this._minY = b.y;
-			this.center.y = (this._minY + this._maxY) / 2;
-		} else if (b.y > this._maxY) {
-			this._maxY = b.y;
-			this.center.y = (this._minY + this._maxY) / 2;
-		}
-	},
 });
