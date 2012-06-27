@@ -18,11 +18,16 @@
 
 	add: function (new1, pos) {
 		this._markers.push(new1);
+
 		if (new1 instanceof L.MarkerCluster) {
 			this._hasChildCluster = true;
+			var ms = new1._markers;
+			for (var i = 0; i < ms.length; i++) {
+				this._recalculateCenter(this._group._map.latLngToLayerPoint(ms[i].getLatLng()));
+			}
+		} else {
+			this._recalculateCenter(pos);
 		}
-
-		this._recalculateCenter(pos);
 	},
 
 	getLatLng : function() {
@@ -41,6 +46,8 @@
 				//m.setOpacity(0.5); //Hack to see which is which
 				m._setPos(this.center);
 				//TODO Scale them down as they move? Fade them as they move?
+			} else if (m._marker) {
+				m._marker._setPos(this.center);
 			}
 		}
 	},

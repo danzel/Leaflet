@@ -25,16 +25,25 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	},
 
 	zoomEnd: function () {
+		//HACK
+		this._map._mapPane.className += ' leaflet-zoom-anim';
+
 		this._needsClustering = this._needsClustering.concat(this._unclustered); //TODO: Efficiency? Maybe a loop with push
 		for (var i = 0; i < this._clusters.length; i++) {
 			this._clusters[i].recalculateCenter();
 		}
 		this._mergeSplitClusters();
 
-		this.generateClusters();
+		this._generateClusters();
 	},
 
-	//Merge and split any existing clusters that are too big or small
+	generateClusters: function () {
+		//HACK
+		this._map._mapPane.className += ' leaflet-zoom-anim';
+
+		this._generateClusters();
+	},
+		//Merge and split any existing clusters that are too big or small
 	_mergeSplitClusters: function () {
 		if (this._map._zoom > this._zoom) { //Zoom in, split
 			/*var todo = this._clusters;
@@ -52,7 +61,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		}
 	},
 
-	generateClusters: function () {
+	_generateClusters: function () {
 		this._zoom = this._map._zoom;
 		//TODO!
 
@@ -63,9 +72,6 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		this._needsClustering = [];
 		this._clusters = res.clusters;
 		this._unclustered = res.unclustered;
-
-		//HACK
-		this._map._mapPane.className += ' leaflet-zoom-anim';
 
 		//Animate all of the markers in the clusters to move to their cluster center point
 		for (var i = 0; i < this._clusters.length; i++) {
