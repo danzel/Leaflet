@@ -10,10 +10,17 @@
 		this.center = new L.LatLng(aLatLng.lat, aLatLng.lng);
 
 		this._recalculateCenter(b.getLatLng());
+
+		if (a instanceof L.MarkerCluster || b instanceof L.MarkerCluster) {
+			this._hasChildCluster = true;
+		}
 	},
 
 	add: function (new1, pos) {
 		this._markers.push(new1);
+		if (new1 instanceof L.MarkerCluster) {
+			this._hasChildCluster = true;
+		}
 
 		this._recalculateCenter(pos);
 	},
@@ -39,7 +46,30 @@
 	},
 
 	createCluster: function () {
-		this.center._round();
+
+		//Expand out contained markers
+		if (this._hasChildCluster) {
+			this._hasChildCluster = false;
+
+			for (var j = 0; j < this._markers.length; j++) {
+				var m = this._markers[j];
+				if (m instanceof L.MarkerCluster) {
+					this._group._map.removeLayer(this._markers[j]._marker);
+					for (var k = 0; k < m._markers.length; k++) {
+						this._markers.push(m._markers[k]);
+					}
+
+					this._markers.splice(j, 1);
+					j--;
+				}
+			}
+		}
+
+		//Remove existing markers from map
+		for (var i = 0; i < this._markers.length; i++) {
+			this._group._map.removeLayer(this._markers[i]);
+		}
+
 
 		//TODO: animate creation
 		if (!this._marker) {
@@ -55,28 +85,18 @@
 			}
 		}
 
-		for (var i = 0; i < this._markers.length; i++) {
-			this._group._map.removeLayer(this._markers[i]);
-
-			//if (this._markers[i] instanceof L.MarkerCluster) {
-			//	this._markers.splice(i, 1);
-			//	i--;
-			//}
-
-		}
 	},
 
 	recalculateCenter: function () {
 		//Recalculate min/max X/Y
 
-		var p = this._group._map.latLngToLayerPoint(this._markers[0]._latlng);
-		this._minX = this._maxX = p.x;
-		this._minY = this._maxY = p.y;
+		var p = this._markers[0].getLatLng();
+		this._minLat = this._maxLat = p.lat;
+		this._minLng = this._maxLng = p.lng;
 		for (var i = 1; i < this._markers.length; i++) {
-			this._recalculateCenter(this._group._map.latLngToLayerPoint(this._markers[i]._latlng));
+			this._recalculateCenter(this._group._map.latLngToLayerPoint(this._markers[i].getLatLng()));
 		}
-		this._centerChanged = false;
-		this.center._round();
+		this._positionChanged = false;
 	},
 
 	_recalculateCenter: function (b) {
@@ -100,7 +120,7 @@
 		}
 		if (latChanged || lngChanged) {
 			this._latLng = new L.LatLng((this._minLat + this._maxLat) / 2, (this._minLng + this._maxLng) / 2);
-			this.center = this._group._map.latLngToLayerPoint(this._latLng);
+			this.center = this._group._map.latLngToLayerPoint(this._latLng).round();
 			this._positionChanged = true;
 			//Recalc center
 		}

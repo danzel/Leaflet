@@ -44,32 +44,11 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 			}*/
 
-		} else if (this._map._zoom > this._zoom) { //Zoom out, merge
-			/*
-			var newClusters = [];
+		} else if (this._map._zoom < this._zoom) { //Zoom out, merge
+			var res = this._cluster(this._clusters, []);
+			console.log('Zoom ' + res.clusters.length + ' clusters, ' + res.unclustered.length + ' unclustered');
 
-			for (var i = 0; i < this._clusters.length; i++) {
-				for (var j = i + 1; j < this._clusters.length; j++) {
-					var ic = this._clusters[i];
-					var jc = this._clusters[j];
-
-					if (this._sqDist(ic.center, jc.center) <= clusterRadiusSqrd) { //Merge these 2
-						//Create a new cluster with the markers of each
-						var n = new L.MarkerCluster(this, ic._markers[0], this._map.latLngToLayerPoint(ic._markers[0]._latlng), ic._markers[1], this._map.latLngToLayerPoint(ic._markers[1]._latlng));
-						for (var z = 2; z < ic._markers.length; z++) {
-							n.add(ic._markers[z], this._map.latLngToLayerPoint(ic._markers[z]._latlng));
-						}
-						for (var x = 0; x < jc._markers.length; x++) {
-							n.add(jc._markers[x], this._map.latLngToLayerPoint(jc._markers[x]._latlng));
-						}
-						newClusters.push(n);
-
-						//Remove these 2 clusters
-
-					}
-				}
-			}*/
-
+			this._clusters = res.clusters.concat(res.unclustered);
 		}
 	},
 
