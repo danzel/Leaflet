@@ -50,7 +50,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 			var currentClusters = this._clusters.slice(0);
 			var allNewClusters = [];
-			//var allNewUnclustered = [];
+			var allNewUnclustered = [];
 
 			for (var i = 0; i < currentClusters.length; i++) {
 				var newClusters = this._cluster(currentClusters[i]._markers, []);
@@ -74,22 +74,24 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 					L.FeatureGroup.prototype.addLayer.call(this, nm);
 					nm._latlng = nm._backupLatLng; //HACK so that we merge correctly below, otherwise we get merged back in
 				}
-				setTimeout(function () {
-					for (var p = 0; p < newClusters.unclustered.length; p++) {
-						//TODO: Hack move the markers
-						var om = newClusters.unclustered[p];
-						om.setLatLng(om._backupLatLng);
-						delete om._backupLatLng;
-					}
-				}, 0);
 
 				//TODO: Will need to hack the markers
 
 				allNewClusters = allNewClusters.concat(newClusters.clusters);
-				this._unclustered = this._unclustered.concat(newClusters.unclustered);
+				allNewUnclustered = allNewUnclustered.concat(newClusters.unclustered);
 			}
+
+			setTimeout(function () {
+				for (var p = 0; p < allNewUnclustered.length; p++) {
+					//TODO: Hack move the markers
+					var om = allNewUnclustered[p];
+					om.setLatLng(om._backupLatLng);
+					delete om._backupLatLng;
+				}
+			}, 0);
+
 			this._clusters = allNewClusters;
-			//this._unclustered = this._unclustered.concat(allNewUnclustered);
+			this._unclustered = this._unclustered.concat(allNewUnclustered);
 
 			//console.log('Zoom in ' + allNewClusters.length + ' un ' + allNewUnclustered.length);
 
