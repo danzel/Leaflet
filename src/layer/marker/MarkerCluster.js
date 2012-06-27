@@ -29,9 +29,9 @@
 	//Make all the markers move to the center point
 	startAnimation: function () {
 		var markers = this._markers,
-			markersLength = markers.length,
-			childClusters = this._childClusters,
-			childClustersLength = childClusters.length;
+		    markersLength = markers.length,
+		    childClusters = this._childClusters,
+		    childClustersLength = childClusters.length;
 
 		for (var i = 0; i < markersLength; i++) {
 			var m = markers[i];

@@ -168,6 +168,32 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		    clusters = existingClusters,
 		    unclustered = [];
 
+		//TODO: May not be needed
+		points.sort(function (a, b) {
+			var aLatLng = a.getLatLng(),
+			    bLatLng = b.getLatLng(),
+			    latDiff = aLatLng.lat - bLatLng.lat;
+
+			if (latDiff != 0) {
+				return latDiff;
+			}
+
+			return aLatLng.lon - bLatLng.lon;
+		});
+
+		//TODO: May not be needed
+		existingClusters.sort(function (a, b) {
+			var aLatLng = a.getLatLng(),
+			    bLatLng = b.getLatLng(),
+			    latDiff = aLatLng.lat - bLatLng.lat;
+
+			if (latDiff != 0) {
+				return latDiff;
+			}
+
+			return aLatLng.lon - bLatLng.lon;
+		});
+
 		for (var i = 0; i < points.length; i++) {
 			var l = points[i];
 			var lp = this._map.latLngToLayerPoint(l.getLatLng());
