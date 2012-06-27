@@ -2,23 +2,24 @@
 	initialize: function (group, a, b) {
 		this._group = group;
 
-		this._markers = [a, b];
+		this._markers = [];
+		this._childClusters = [];
+		this._childCount = 0;
 
-		this._expandBounds(a);
-		this._expandBounds(b);
-
-		if (a instanceof L.MarkerCluster || b instanceof L.MarkerCluster) {
-			this._hasChildCluster = true;
-		}
+		this.add(a);
+		this.add(b);
 	},
 
 	add: function (new1) {
-		this._markers.push(new1);
-		this._expandBounds(new1);
-
 		if (new1 instanceof L.MarkerCluster) {
-			this._hasChildCluster = true;
+			this._childClusters.push(new1);
+			this._childCount += new1._childCount;
+		} else {
+			this._markers.push(new1);
+			this._childCount++;
 		}
+
+		this._expandBounds(new1);
 	},
 
 	getLatLng : function() {
@@ -27,9 +28,12 @@
 
 	//Make all the markers move to the center point
 	startAnimation: function () {
-		var markers = this._markers;
+		var markers = this._markers,
+			markersLength = markers.length,
+			childClusters = this._childClusters,
+			childClustersLength = childClusters.length;
 
-		for (var i = 0; i < markers.length; i++) {
+		for (var i = 0; i < markersLength; i++) {
 			var m = markers[i];
 
 			//Only do it if the icon is still on the map
@@ -37,8 +41,12 @@
 				//m.setOpacity(0.5); //Hack to see which is which
 				m._setPos(this.center);
 				//TODO Scale them down as they move? Fade them as they move?
-			} else if (m._marker) {
-				m._marker._setPos(this.center);
+			}
+		}
+		for (var j = 0; j < childClustersLength; j++) {
+			var cm = childClusters[j]._marker;
+			if (cm._icon) {
+				cm._setPos(this.center);
 			}
 		}
 	},
@@ -46,54 +54,43 @@
 	//startPos is optional
 	createCluster: function (startPos) {
 
-		//Expand out contained markers
-		if (this._hasChildCluster) {
-			this._hasChildCluster = false;
-
-			for (var j = 0; j < this._markers.length; j++) {
-				var m = this._markers[j];
-				if (m instanceof L.MarkerCluster) {
-					this._group._map.removeLayer(this._markers[j]._marker);
-					for (var k = 0; k < m._markers.length; k++) {
-						this._markers.push(m._markers[k]);
-					}
-
-					this._markers.splice(j, 1);
-					j--;
-				}
-			}
-		}
-
 		//Remove existing markers from map
 		for (var i = 0; i < this._markers.length; i++) {
 			//TODO: animate removing
 			//this._markers[i]._icon.style.opacity = 0.3;
 			this._group._map.removeLayer(this._markers[i]);
 		}
-
+		//remove existing child clusters
+		for (var j = 0; j < this._childClusters.length; j++) {
+			//TODO: animate removing
+			//this._markers[j]._icon.style.opacity = 0.3;
+			this._group._map.removeLayer(this._childClusters[j]._marker);
+		}
 
 		//Create our point or update/move as required
 		//TODO: animate creation
 		if (!this._marker) {
-			var m = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._markers.length, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
-			this._group._map.addLayer(m);
-			if (startPos) { //To animate it
-				console.log(startPos + " -> " + this._latLng);
-				var l = this._latLng;
-				setTimeout(function () {
-					m.setLatLng(l);
-				}, 0);
-			}
-			this._marker = m;
-		} else {
-			this._marker._icon.innerHTML = this._markers.length;
-
-			if (this._positionChanged) {
-				this._positionChanged = false;
-				this._marker.setLatLng(this._latLng);
-			}
+			this._marker = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
+		} else if (startPos) {
+			this._marker.setLatLng(startPos);
 		}
 
+		this._group._map.addLayer(this._marker);
+		this._marker._icon.innerHTML = this._childCount;
+		
+		if (startPos) { //To animate it
+			console.log(startPos + " -> " + this._latLng);
+			var l = this._latLng;
+			var m = this._marker;
+			setTimeout(function () {
+				m.setLatLng(l);
+			}, 0);
+		}
+
+		if (this._positionChanged) {
+			this._positionChanged = false;
+			this._marker.setLatLng(this._latLng);
+		}
 	},
 
 	recalculateCenter: function () {
@@ -103,45 +100,52 @@
 		for (var i = 0; i < this._markers.length; i++) {
 			this._expandBounds(this._markers[i]);
 		}
+		for (var j = 0; j < this._childClusters.length; j++) {
+			this._expandBounds(this._childClusters[j]);
+		}
 		this._positionChanged = false;
 	},
 
 	_expandBounds: function (marker) {
+		var minLatLng = marker.getLatLng(),
+			maxLatLng = marker.getLatLng();
+
 		if (marker instanceof L.MarkerCluster) {
-			for (var i = 0; i < marker._markers.length; i++) {
-				this._expandBounds(marker._markers[i]);
-			}
-			return;
+			minLatLng = new L.LatLng(marker._minLat, marker._minLng);
+			maxLatLng = new L.LatLng(marker._maxLat, marker._maxLng);
 		}
 
-		var latLng = marker.getLatLng();
-
-		var latChanged = true, lngChanged = true;
+		var boundsChanged = false;
 
 		if (!this._hasBounds) {
-			this._minLat = this._maxLat = latLng.lat;
-			this._minLng = this._maxLng = latLng.lng;
+			this._minLat = minLatLng.lat;
+			this._maxLat = maxLatLng.lat;
+			this._minLng = minLatLng.lng;
+			this._maxLng = maxLatLng.lng;
 			this._hasBounds = true;
+			boundsChanged = true;
 		}
 		else {
-			if (latLng.lat < this._minLat) {
-				this._minLat = latLng.lat;
-			} else if (latLng.lat > this._maxLat) {
-				this._maxLat = latLng.lat;
-			} else {
-				latChanged = false;
+			if (minLatLng.lat < this._minLat) {
+				this._minLat = minLatLng.lat;
+				boundsChanged = true;
+			}
+			if (maxLatLng.lat > this._maxLat) {
+				this._maxLat = maxLatLng.lat;
+				boundsChanged = true;
 			}
 
-			if (latLng.lng < this._minLng) {
-				this._minLng = latLng.lng;
-			} else if (latLng.lng > this._maxLng) {
-				this._maxLng = latLng.lng;
-			} else {
-				lngChanged = false;
+			if (minLatLng.lng < this._minLng) {
+				this._minLng = minLatLng.lng;
+				boundsChanged = true;
+			}
+			if (maxLatLng.lng > this._maxLng) {
+				this._maxLng = maxLatLng.lng;
+				boundsChanged = true;
 			}
 		}
 
-		if (latChanged || lngChanged) {
+		if (boundsChanged) {
 			//Recalc center
 			this._latLng = new L.LatLng((this._minLat + this._maxLat) / 2, (this._minLng + this._maxLng) / 2);
 			this.center = this._group._map.latLngToLayerPoint(this._latLng).round();

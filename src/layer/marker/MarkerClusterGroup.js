@@ -48,12 +48,18 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	_mergeSplitClusters: function () {
 		if (this._map._zoom > this._zoom) { //Zoom in, split
 
-			var currentClusters = this._clusters.slice(0);
+			var currentClusters = this._clusters;
 			var allNewClusters = [];
 			var allNewUnclustered = [];
 
 			for (var i = 0; i < currentClusters.length; i++) {
-				var newClusters = this._cluster(currentClusters[i]._markers, []);
+				var newClusters;
+				if (currentClusters[i]._childClusters.length > 0) {
+					newClusters = { clusters: currentClusters[i]._childClusters, unclustered: currentClusters[i]._markers };
+				}
+				else {
+					newClusters = this._cluster(currentClusters[i]._markers, []);
+				}
 				var startPos = currentClusters[i].getLatLng();
 
 				//Remove old cluster
