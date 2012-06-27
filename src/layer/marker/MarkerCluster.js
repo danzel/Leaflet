@@ -43,7 +43,8 @@
 		}
 	},
 
-	createCluster: function () {
+	//startPos is optional
+	createCluster: function (startPos) {
 
 		//Expand out contained markers
 		if (this._hasChildCluster) {
@@ -65,6 +66,7 @@
 
 		//Remove existing markers from map
 		for (var i = 0; i < this._markers.length; i++) {
+			//TODO: animate removing
 			//this._markers[i]._icon.style.opacity = 0.3;
 			this._group._map.removeLayer(this._markers[i]);
 		}
@@ -73,8 +75,15 @@
 		//Create our point or update/move as required
 		//TODO: animate creation
 		if (!this._marker) {
-			var m = new L.Marker(this._latLng, { icon: new L.DivIcon({ innerHTML: this._markers.length, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
+			var m = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._markers.length, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
 			this._group._map.addLayer(m);
+			if (startPos) { //To animate it
+				console.log(startPos + " -> " + this._latLng);
+				var l = this._latLng;
+				setTimeout(function () {
+					m.setLatLng(l);
+				}, 0);
+			}
 			this._marker = m;
 		} else {
 			this._marker._icon.innerHTML = this._markers.length;

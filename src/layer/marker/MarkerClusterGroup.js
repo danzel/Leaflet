@@ -28,11 +28,11 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		//HACK
 		this._map._mapPane.className += ' leaflet-zoom-anim';
 
-		this._needsClustering = this._needsClustering.concat(this._unclustered); //TODO: Efficiency? Maybe a loop with push
 		for (var i = 0; i < this._clusters.length; i++) {
 			this._clusters[i].recalculateCenter();
 		}
 		this._mergeSplitClusters();
+		this._needsClustering = this._needsClustering.concat(this._unclustered); //TODO: Efficiency? Maybe a loop with push
 
 		this._generateClusters();
 	},
@@ -47,6 +47,52 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		//Merge and split any existing clusters that are too big or small
 	_mergeSplitClusters: function () {
 		if (this._map._zoom > this._zoom) { //Zoom in, split
+
+			var currentClusters = this._clusters.slice(0);
+			var allNewClusters = [];
+			//var allNewUnclustered = [];
+
+			for (var i = 0; i < currentClusters.length; i++) {
+				var newClusters = this._cluster(currentClusters[i]._markers, []);
+				var startPos = currentClusters[i].getLatLng();
+
+				//Remove old cluster
+				this._map.removeLayer(currentClusters[i]._marker); //HACK TODO Animate
+
+				//Add new clusters
+				for (var j = 0; j < newClusters.clusters.length; j++) {
+					newClusters.clusters[j].createCluster(startPos);
+				}
+
+				//Add new markers
+				for (var k = 0; k < newClusters.unclustered.length; k++) {
+					//TODO: Hack move the markers
+					var nm = newClusters.unclustered[k];
+					nm._backupLatLng = nm.getLatLng();
+
+					nm.setLatLng(startPos);
+					L.FeatureGroup.prototype.addLayer.call(this, nm);
+					nm._latlng = nm._backupLatLng; //HACK so that we merge correctly below, otherwise we get merged back in
+				}
+				setTimeout(function () {
+					for (var p = 0; p < newClusters.unclustered.length; p++) {
+						//TODO: Hack move the markers
+						var om = newClusters.unclustered[p];
+						om.setLatLng(om._backupLatLng);
+						delete om._backupLatLng;
+					}
+				}, 0);
+
+				//TODO: Will need to hack the markers
+
+				allNewClusters = allNewClusters.concat(newClusters.clusters);
+				this._unclustered = this._unclustered.concat(newClusters.unclustered);
+			}
+			this._clusters = allNewClusters;
+			//this._unclustered = this._unclustered.concat(allNewUnclustered);
+
+			//console.log('Zoom in ' + allNewClusters.length + ' un ' + allNewUnclustered.length);
+
 			//TODO
 		} else if (this._map._zoom < this._zoom) { //Zoom out, merge
 			var res = this._cluster(this._clusters, []);
