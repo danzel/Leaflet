@@ -14,6 +14,8 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		L.Util.setOptions(this, options);
 
 		L.FeatureGroup.prototype.initialize.call(this, layers); // LayerGroup
+
+		this._needsClustering = [];
 	},
 
 	_sqDist: function (p1, p2) {
@@ -22,17 +24,69 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		return dx * dx + dy * dy;
 	},
 
+	zoomEnd: function () {
+		this._needsClustering = this._needsClustering.concat(this._unclustered); //TODO: Efficiency? Maybe a loop with push
+		for (var i = 0; i < this._clustered.length; i++) {
+			this._clustered[i].recalculateCenter();
+		}
+		this._mergeSplitClusters();
+
+		this.generateClusters();
+	},
+
+	//Merge and split any existing clusters that are too big or small
+	_mergeSplitClusters: function () {
+		var clusterRadiusSqrd = this.options.maxClusterRadius * this.options.maxClusterRadius;
+
+		if (this._map._zoom > this._zoom) { //Zoom in, split
+			/*var todo = this._clustered;
+			this._clustered = [];
+
+			for (var i = 0; i < todo.length; i++) {
+
+			}*/
+
+		} else if (this._map._zoom > this._zoom) { //Zoom out, merge
+			/*
+			var newClusters = [];
+
+			for (var i = 0; i < this._clustered.length; i++) {
+				for (var j = i + 1; j < this._clustered.length; j++) {
+					var ic = this._clustered[i];
+					var jc = this._clustered[j];
+
+					if (this._sqDist(ic.center, jc.center) <= clusterRadiusSqrd) { //Merge these 2
+						//Create a new cluster with the markers of each
+						var n = new L.MarkerCluster(this, ic._markers[0], this._map.latLngToLayerPoint(ic._markers[0]._latlng), ic._markers[1], this._map.latLngToLayerPoint(ic._markers[1]._latlng));
+						for (var z = 2; z < ic._markers.length; z++) {
+							n.add(ic._markers[z], this._map.latLngToLayerPoint(ic._markers[z]._latlng));
+						}
+						for (var x = 0; x < jc._markers.length; x++) {
+							n.add(jc._markers[x], this._map.latLngToLayerPoint(jc._markers[x]._latlng));
+						}
+						newClusters.push(n);
+
+						//Remove these 2 clusters
+
+					}
+				}
+			}*/
+
+		}
+	},
+
 	generateClusters: function () {
+		this._zoom = this._map._zoom;
 		//TODO!
 
 		var clusterRadiusSqrd = this.options.maxClusterRadius * this.options.maxClusterRadius;
 
-		var clustered = [];
+		var clustered = this._clustered || [];
 		var unclustered = [];
 
-		for (var i in this._layers) {
-			var l = this._layers[i];
-			var xp = l._phax = this._map.project(l.getLatLng());
+		for (var i = 0; i < this._needsClustering.length; i++) {
+			var l = this._needsClustering[i];
+			var xp = l._phax = this._map.latLngToLayerPoint(l.getLatLng());
 
 			var used = false;
 
@@ -60,6 +114,9 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			}
 		}
 		console.log('made ' + clustered.length + ' clusters');
+		this._needsClustering = [];
+		this._clustered = clustered;
+		this._unclustered = unclustered;
 
 		//HACK
 		this._map._mapPane.className += ' leaflet-zoom-anim';
@@ -87,8 +144,17 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		}, 250);
 	},
 
+	addLayer: function (layer) {
+		L.FeatureGroup.prototype.addLayer.call(this, layer);
+
+		this._needsClustering.push(layer);
+	},
+
+	//TODO: removeLayer
 	onAdd: function (map) {
 		L.FeatureGroup.prototype.onAdd.call(this, map); // LayerGroup
+
+		this._map.on('zoomend', this.zoomEnd, this);
 
 		//this.generateClusters();
 	}
