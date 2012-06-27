@@ -41,22 +41,16 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		//HACK
 		this._map._mapPane.className += ' leaflet-zoom-anim';
 
+		this._needsClustering = this._needsClustering.concat(this._unclustered || []);
 		this._generateClusters();
 	},
 		//Merge and split any existing clusters that are too big or small
 	_mergeSplitClusters: function () {
 		if (this._map._zoom > this._zoom) { //Zoom in, split
-			/*var todo = this._clusters;
-			this._clusters = [];
-
-			for (var i = 0; i < todo.length; i++) {
-
-			}*/
-
+			//TODO
 		} else if (this._map._zoom < this._zoom) { //Zoom out, merge
 			var res = this._cluster(this._clusters, []);
 			console.log('Zoom ' + res.clusters.length + ' clusters, ' + res.unclustered.length + ' unclustered');
-
 			this._clusters = res.clusters.concat(res.unclustered);
 		}
 	},
@@ -129,7 +123,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			for (var j = 0; j < clusters.length; j++) {
 				var c = clusters[j];
 				if (this._sqDist(lp, c.center) <= clusterRadiusSqrd) {
-					c.add(l, lp);
+					c.add(l);
 					used = true;
 					break;
 				}

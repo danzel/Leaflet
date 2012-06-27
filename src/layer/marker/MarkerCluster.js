@@ -4,29 +4,20 @@
 
 		this._markers = [a, b];
 
-		var aLatLng = a.getLatLng();
-		this._minLat = this._maxLat = aLatLng.lat;
-		this._minLng = this._maxLng = aLatLng.lng;
-		this.center = new L.LatLng(aLatLng.lat, aLatLng.lng);
-
-		this._recalculateCenter(b.getLatLng());
+		this._expandBounds(a);
+		this._expandBounds(b);
 
 		if (a instanceof L.MarkerCluster || b instanceof L.MarkerCluster) {
 			this._hasChildCluster = true;
 		}
 	},
 
-	add: function (new1, pos) {
+	add: function (new1) {
 		this._markers.push(new1);
+		this._expandBounds(new1);
 
 		if (new1 instanceof L.MarkerCluster) {
 			this._hasChildCluster = true;
-			var ms = new1._markers;
-			for (var i = 0; i < ms.length; i++) {
-				this._recalculateCenter(this._group._map.latLngToLayerPoint(ms[i].getLatLng()));
-			}
-		} else {
-			this._recalculateCenter(pos);
 		}
 	},
 
@@ -74,10 +65,12 @@
 
 		//Remove existing markers from map
 		for (var i = 0; i < this._markers.length; i++) {
+			//this._markers[i]._icon.style.opacity = 0.3;
 			this._group._map.removeLayer(this._markers[i]);
 		}
 
 
+		//Create our point or update/move as required
 		//TODO: animate creation
 		if (!this._marker) {
 			var m = new L.Marker(this._latLng, { icon: new L.DivIcon({ innerHTML: this._markers.length, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
@@ -97,39 +90,53 @@
 	recalculateCenter: function () {
 		//Recalculate min/max X/Y
 
-		var p = this._markers[0].getLatLng();
-		this._minLat = this._maxLat = p.lat;
-		this._minLng = this._maxLng = p.lng;
-		for (var i = 1; i < this._markers.length; i++) {
-			this._recalculateCenter(this._group._map.latLngToLayerPoint(this._markers[i].getLatLng()));
+		this._hasBounds = false;
+		for (var i = 0; i < this._markers.length; i++) {
+			this._expandBounds(this._markers[i]);
 		}
 		this._positionChanged = false;
 	},
 
-	_recalculateCenter: function (b) {
-		
+	_expandBounds: function (marker) {
+		if (marker instanceof L.MarkerCluster) {
+			for (var i = 0; i < marker._markers.length; i++) {
+				this._expandBounds(marker._markers[i]);
+			}
+			return;
+		}
+
+		var latLng = marker.getLatLng();
+
 		var latChanged = true, lngChanged = true;
 
-		if (b.lat < this._minLat) {
-			this._minLat = b.lat;
-		} else if (b.lat > this._maxLat) {
-			this._maxLat = b.lat;
-		} else {
-			latChanged = false;
+		if (!this._hasBounds) {
+			this._minLat = this._maxLat = latLng.lat;
+			this._minLng = this._maxLng = latLng.lng;
+			this._hasBounds = true;
+		}
+		else {
+			if (latLng.lat < this._minLat) {
+				this._minLat = latLng.lat;
+			} else if (latLng.lat > this._maxLat) {
+				this._maxLat = latLng.lat;
+			} else {
+				latChanged = false;
+			}
+
+			if (latLng.lng < this._minLng) {
+				this._minLng = latLng.lng;
+			} else if (latLng.lng > this._maxLng) {
+				this._maxLng = latLng.lng;
+			} else {
+				lngChanged = false;
+			}
 		}
 
-		if (b.lng < this._minLng) {
-			this._minLng = b.lng;
-		} else if (b.lng > this._maxLng) {
-			this._maxLng = b.lng;
-		} else {
-			lngChanged = false;
-		}
 		if (latChanged || lngChanged) {
+			//Recalc center
 			this._latLng = new L.LatLng((this._minLat + this._maxLat) / 2, (this._minLng + this._maxLng) / 2);
 			this.center = this._group._map.latLngToLayerPoint(this._latLng).round();
 			this._positionChanged = true;
-			//Recalc center
 		}
 	},
 });
