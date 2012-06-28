@@ -35,6 +35,9 @@
 		    childClusters = this._childClusters,
 		    childClustersLength = childClusters.length;
 
+		//Need to recalculate this if the map has moved
+		this.center = this._group._map.latLngToLayerPoint(this._latLng).round();
+
 		for (var i = 0; i < markersLength; i++) {
 			var m = markers[i];
 
