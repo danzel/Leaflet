@@ -137,7 +137,6 @@
 			for (var j = 0; j < this._childClusters.length; j++) {
 				//TODO: animate removing
 				this._group._map.removeLayer(this._childClusters[j]._marker);
-				console.log('remove cluster in');
 			}
 		} else {
 			var childClusters = this._childClusters,
