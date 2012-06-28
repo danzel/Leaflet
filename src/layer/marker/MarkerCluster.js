@@ -28,15 +28,11 @@
 		return this._latLng;
 	},
 
-	//Make all the markers move to the center point
-	animateChildrenIn: function () {
+	recursivelyAnimateChildrenIn: function (center, depth) {
 		var markers = this._markers,
 		    markersLength = markers.length,
 		    childClusters = this._childClusters,
 		    childClustersLength = childClusters.length;
-
-		//Need to recalculate this if the map has moved
-		this.center = this._group._map.latLngToLayerPoint(this._latLng).round();
 
 		for (var i = 0; i < markersLength; i++) {
 			var m = markers[i];
@@ -44,31 +40,84 @@
 			//Only do it if the icon is still on the map
 			if (m._icon) {
 				//m.setOpacity(0.5); //Hack to see which is which
-				m._setPos(this.center);
+				m._setPos(center);
 				//TODO Scale them down as they move? Fade them as they move?
 			}
 		}
-		for (var j = 0; j < childClustersLength; j++) {
-			var cm = childClusters[j]._marker;
-			if (cm._icon) {
-				cm._setPos(this.center);
+
+		if (depth == 1) {
+			for (var j = 0; j < childClustersLength; j++) {
+				var cm = childClusters[j]._marker;
+				if (cm._icon) {
+					cm._setPos(center);
+				}
+			}
+		} else {
+			for (var j = 0; j < childClustersLength; j++) {
+				childClusters[j].recursivelyAnimateChildrenIn(center, depth - 1);
 			}
 		}
 	},
-
+	
 	//Create our cluster marker and add it to the map
 	createCluster: function (startPos) {
 		this._marker = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
 		this._group._map.addLayer(this._marker);
 	},
 
+	recursivelyAddChildrenToMap: function (startPos, depth) {
+
+		//Add its child markers (at startPos via HACK)
+		for (var l = 0; l < this._markers.length; l++) {
+			var nm = this._markers[l];
+			nm._backupLatLng = nm.getLatLng();
+
+			nm.setLatLng(startPos);
+			L.FeatureGroup.prototype.addLayer.call(this._group, nm);
+		}
+
+		if (depth == 1) {
+
+			//Add its child clusters at startPos
+			for (var k = 0; k < this._childClusters.length; k++) {
+				this._childClusters[k].addToMap(startPos);
+			}
+
+
+		} else {
+			for (var k = 0; k < this._childClusters.length; k++) {
+				this._childClusters[k].recursivelyAddChildrenToMap(startPos, depth - 1);
+			}
+		}
+	},
+
 	//Set our markers position as given and add it to the map (Will create marker if required)
 	addToMap: function (startPos) {
 		if (!this._marker) {
-			createCluster(startPos);
+			this.createCluster(startPos);
 		} else {
 			this._marker.setLatLng(startPos);
 			this._group._map.addLayer(this._marker);
+		}
+	},
+
+	recursivelyRepositionChildren: function (depth) {
+		//Fix positions of child markers
+		for (var l = 0; l < this._markers.length; l++) {
+			var nm = this._markers[l];
+			nm.setLatLng(nm._backupLatLng);
+			delete nm._backupLatLng;
+		}
+
+		if (depth == 1) {
+			//Reposition child clusters
+			for (var k = 0; k < this._childClusters.length; k++) {
+				this._childClusters[k].reposition();
+			}
+		} else {
+			for (var k = 0; k < this._childClusters.length; k++) {
+				this._childClusters[k].recursivelyRepositionChildren(depth - 1);
+			}
 		}
 	},
 
@@ -76,18 +125,29 @@
 		this._marker.setLatLng(this._latLng);
 	},
 
-	removeChildrenFromMap: function () {
+	recursivelyRemoveChildrenFromMap: function (depth) {
 		//markers
 		for (var i = 0; i < this._markers.length; i++) {
 			//TODO: animate removing
 			//this._markers[i]._icon.style.opacity = 0.3;
 			this._group._map.removeLayer(this._markers[i]);
 		}
-		//child clusters
-		for (var j = 0; j < this._childClusters.length; j++) {
-			//TODO: animate removing
-			//this._markers[j]._icon.style.opacity = 0.3;
-			this._group._map.removeLayer(this._childClusters[j]._marker);
+
+		if (depth == 1) {
+			//child clusters
+			for (var j = 0; j < this._childClusters.length; j++) {
+				//TODO: animate removing
+				//this._markers[j]._icon.style.opacity = 0.3;
+				this._group._map.removeLayer(this._childClusters[j]._marker);
+				console.log('remove cluster in');
+			}
+		} else {
+			var childClusters = this._childClusters,
+			    childClustersLength = childClusters.length;
+
+			for (var j = 0; j < childClustersLength; j++) {
+				childClusters[j].recursivelyRemoveChildrenFromMap(depth - 1);
+			}
 		}
 	},
 
