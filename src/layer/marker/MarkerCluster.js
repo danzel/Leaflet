@@ -7,7 +7,9 @@
 		this._childCount = 0;
 
 		this.add(a);
-		this.add(b);
+		if (b) {
+			this.add(b);
+		}
 	},
 
 	add: function (new1) {
@@ -27,7 +29,7 @@
 	},
 
 	//Make all the markers move to the center point
-	startAnimation: function () {
+	animateChildrenIn: function () {
 		var markers = this._markers,
 		    markersLength = markers.length,
 		    childClusters = this._childClusters,
@@ -51,8 +53,43 @@
 		}
 	},
 
-	//startPos is optional
+	//Create our cluster marker and add it to the map
 	createCluster: function (startPos) {
+		this._marker = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
+		this._group._map.addLayer(this._marker);
+	},
+
+	//Set our markers position as given and add it to the map (Will create marker if required)
+	addToMap: function (startPos) {
+		if (!this._marker) {
+			createCluster(startPos);
+		} else {
+			this._marker.setLatLng(startPos);
+			this._group._map.addLayer(this._marker);
+		}
+	},
+
+	reposition: function () {
+		this._marker.setLatLng(this._latLng);
+	},
+
+	removeChildrenFromMap: function () {
+		//markers
+		for (var i = 0; i < this._markers.length; i++) {
+			//TODO: animate removing
+			//this._markers[i]._icon.style.opacity = 0.3;
+			this._group._map.removeLayer(this._markers[i]);
+		}
+		//child clusters
+		for (var j = 0; j < this._childClusters.length; j++) {
+			//TODO: animate removing
+			//this._markers[j]._icon.style.opacity = 0.3;
+			this._group._map.removeLayer(this._childClusters[j]._marker);
+		}
+	},
+
+		//startPos is optional
+	createClusterOld: function (startPos) {
 
 		//Remove existing markers from map
 		for (var i = 0; i < this._markers.length; i++) {
