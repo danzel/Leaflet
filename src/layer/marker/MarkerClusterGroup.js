@@ -87,6 +87,9 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 							newClusters = this._cluster(currentClusters[i]._markers, [], this._zoom);
 						}
 
+						currentClusters[i]._childClusters = newClusters.clusters;
+						currentClusters[i]._markers = newClusters.unclustered;
+
 						newState.clusters = newState.clusters.concat(newClusters.clusters);
 						newState.unclustered = newState.unclustered.concat(newClusters.unclustered);
 					}
@@ -102,7 +105,6 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 				//Remove old cluster
 				this._map.removeLayer(c._marker); //TODO Animate
-				console.log('remove cluster ex');
 
 				c.recursivelyAddChildrenToMap(startPos, depth);
 			}
@@ -133,7 +135,6 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 					this._markersAndClustersAtZoom[this._zoom] = newState;
 				}
 			}
-			console.log('new ' + newState.clusters.length + ' un ' + newState.unclustered.length);
 
 			//Animate all of the markers in the clusters to move to their cluster center point
 			var newClusters = newState.clusters;
@@ -158,48 +159,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 					cl.recursivelyRemoveChildrenFromMap(depth);
 				}
 			}, 250);
-
-
-			//Move all things to new locations
-			//Add new clusters
-			//console.log('Zoom ' + res.clusters.length + ' clusters, ' + res.unclustered.length + ' unclustered');
-
-			//this._clusters = res.clusters.concat(res.unclustered);
 		}
-	},
-
-	_generateClusters: function () {
-		//TODO!
-		throw "ASD";
-		var res = this._cluster(this._needsClustering, this._clusters || []);
-
-		console.log('made ' + res.clusters.length + ' clusters, ' + res.unclustered.length + ' unclustered');
-
-		this._needsClustering = [];
-		this._clusters = res.clusters;
-		this._unclustered = res.unclustered;
-
-		//Animate all of the markers in the clusters to move to their cluster center point
-		for (var i = 0; i < this._clusters.length; i++) {
-			var c = this._clusters[i];
-
-			c.startAnimation();
-		}
-
-		//TODO: Use the transition stuff to make this more reliable
-		var map = this._map;
-		setTimeout(function () {
-
-			//HACK
-			map._mapPane.className = map._mapPane.className.replace('leaflet-zoom-anim', '');
-
-			//this.createClusters();
-			for (var j = 0; j < res.clusters.length; j++) {
-				var cl = res.clusters[j];
-
-				cl.createCluster();
-			}
-		}, 250);
 	},
 
 	addLayer: function (layer) {
