@@ -13,9 +13,9 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	initialize: function (layers, options) {
 		L.Util.setOptions(this, options);
 
-		L.FeatureGroup.prototype.initialize.call(this, layers); // LayerGroup
+		L.FeatureGroup.prototype.initialize.call(this, layers);
 
-		this._needsClustering = []; //TODO Revisit
+		this._needsClustering = [];
 
 		this._markersAndClustersAtZoom = {};
 	},
@@ -31,26 +31,18 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		//HACK
 		this._map._mapPane.className += ' leaflet-zoom-anim';
 
-		//for (var i = 0; i < this._clusters.length; i++) {
-		//	this._clusters[i].recalculateCenter();
-		//}
 		this._mergeSplitClusters();
-		//this._needsClustering = this._needsClustering.concat(this._unclustered); //TODO: Efficiency? Maybe a loop with push
 
-		//this._generateClusters();
 		this._zoom = this._map._zoom;
 	},
 
 	generateInitialClusters: function () {
-		//HACK
-		this._map._mapPane.className += ' leaflet-zoom-anim';
-
 		var res = this._cluster(this._needsClustering, [], this._map.getZoom());
 
 		this._markersAndClustersAtZoom[this._map._zoom] = res;
 		this._zoom = this._map._zoom;
 
-		//TODO Make things appear on the map
+		//Make things appear on the map
 		for (var i = 0; i < res.clusters.length; i++) {
 			res.clusters[i].createCluster();
 		}
@@ -61,6 +53,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 	//Merge and split any existing clusters that are too big or small
 	_mergeSplitClusters: function () {
+		var map = this._map;
 
 		if (this._zoom < this._map._zoom) {
 			var depth = this._map._zoom - this._zoom;
@@ -113,9 +106,16 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			//Start up a function to update the positions of the just added clusters/markers
 			//This must happen after otherwise they don't get animated
 			setTimeout(function () {
+
 				for (var j = 0; j < startingClusters.length; j++) {
 					startingClusters[j].recursivelyRepositionChildren(depth);
 				}
+
+				setTimeout(function () {
+					//HACK
+					map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
+
+				}, 250);
 			}, 0);
 
 		} else if (this._zoom > this._map._zoom) { //Zoom out, merge
@@ -144,12 +144,11 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				c.recursivelyAnimateChildrenIn(this._map.latLngToLayerPoint(c.getLatLng()).round(), depth);
 			}
 
-			//TODO: Use the transition stuff to make this more reliable
-			var map = this._map;
+			//TODO: Use the transition timing stuff to make this more reliable
 			setTimeout(function() {
 
 				//HACK
-				map._mapPane.className = map._mapPane.className.replace('leaflet-zoom-anim', '');
+				map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
 
 				//this.createClusters();
 				for (var j = 0; j < newClusters.length; j++) {
@@ -163,22 +162,31 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	},
 
 	addLayer: function (layer) {
-		//L.FeatureGroup.prototype.addLayer.call(this, layer);
-
 		this._needsClustering.push(layer);
+
+		//TODO: If we have already clustered we'll need to add this one to a cluster
+		//Should be able to use _cluster with the current clusters and just this layer
+
+		return this;
 	},
 
-	//TODO: removeLayer
+	removeLayer: function (layer) {
+
+		//TODO Hrm....
+		//Will need to got through each cluster and find the marker, removing it as required, possibly turning its parent from a cluster into an individual marker.
+		//Or the easy version: Just recluster everything!
+
+		return this;
+	},
+
 	onAdd: function (map) {
 		L.FeatureGroup.prototype.onAdd.call(this, map); // LayerGroup
 
 		this._map.on('zoomend', this.zoomEnd, this);
-
-		//this.generateClusters();
 	},
 
-
 	//Takes a list of objects that have a 'getLatLng()' function (Marker / MarkerCluster)
+	//Performs clustering on them (using a greedy algorithm) and returns those clusters.
 	//Returns { clusters: [], unclustered: [] }
 	_cluster: function (points, existingClusters, zoom) {
 
@@ -193,38 +201,44 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			c.center = this._map._latLngToNewLayerPoint(c.getLatLng(), zoom, center);
 		}
 
+		//go through each point
 		for (var i = 0; i < points.length; i++) {
-			var l = points[i];
-			var lp = this._map._latLngToNewLayerPoint(l.getLatLng(), zoom, center);
+			var point = points[i];
+			var pointPosition = this._map._latLngToNewLayerPoint(point.getLatLng(), zoom, center);
 
 			var used = false;
 
+			//try add it to an existing cluster
 			for (var j = 0; j < clusters.length; j++) {
 				var c = clusters[j];
-				if (this._sqDist(lp, c.center) <= clusterRadiusSqrd) {
-					c.add(l);
+				if (this._sqDist(pointPosition, c.center) <= clusterRadiusSqrd) {
+					c.add(point);
 					used = true;
 					break;
 				}
 			}
 
+			//otherwise, look through all of the markers we haven't managed to cluster and see if we should form a cluster with them
 			if (!used) {
 				for (var k = 0 ; k < unclustered.length; k++) {
 					var kp = this._map.latLngToLayerPoint(unclustered[k].getLatLng());
-					if (this._sqDist(lp, kp) <= clusterRadiusSqrd) {
+					if (this._sqDist(pointPosition, kp) <= clusterRadiusSqrd) {
 						//Create a new cluster with these 2
-						var newCluster = new L.MarkerCluster(this, l, unclustered[k]);
+						var newCluster = new L.MarkerCluster(this, point, unclustered[k]);
 						clusters.push(newCluster);
+
+						//the cluster will set its center point based on the current map zoom level, so we need to recalculate it
 						if (zoom != this._map._zoom) {
 							newCluster.center = this._map._latLngToNewLayerPoint(newCluster.getLatLng(), zoom, center);
 						}
+
 						unclustered.splice(k, 1);
 						used = true;
 						break;
 					}
 				}
 				if (!used) {
-					unclustered.push(l);
+					unclustered.push(point);
 				}
 			}
 		}

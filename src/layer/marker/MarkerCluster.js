@@ -129,7 +129,6 @@
 		//markers
 		for (var i = 0; i < this._markers.length; i++) {
 			//TODO: animate removing
-			//this._markers[i]._icon.style.opacity = 0.3;
 			this._group._map.removeLayer(this._markers[i]);
 		}
 
@@ -137,7 +136,6 @@
 			//child clusters
 			for (var j = 0; j < this._childClusters.length; j++) {
 				//TODO: animate removing
-				//this._markers[j]._icon.style.opacity = 0.3;
 				this._group._map.removeLayer(this._childClusters[j]._marker);
 				console.log('remove cluster in');
 			}
@@ -150,49 +148,7 @@
 			}
 		}
 	},
-
-		//startPos is optional
-	createClusterOld: function (startPos) {
-
-		//Remove existing markers from map
-		for (var i = 0; i < this._markers.length; i++) {
-			//TODO: animate removing
-			//this._markers[i]._icon.style.opacity = 0.3;
-			this._group._map.removeLayer(this._markers[i]);
-		}
-		//remove existing child clusters
-		for (var j = 0; j < this._childClusters.length; j++) {
-			//TODO: animate removing
-			//this._markers[j]._icon.style.opacity = 0.3;
-			this._group._map.removeLayer(this._childClusters[j]._marker);
-		}
-
-		//Create our point or update/move as required
-		//TODO: animate creation
-		if (!this._marker) {
-			this._marker = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
-		} else if (startPos) {
-			this._marker.setLatLng(startPos);
-		}
-
-		this._group._map.addLayer(this._marker);
-		this._marker._icon.innerHTML = this._childCount;
-		
-		if (startPos) { //To animate it
-			console.log(startPos + " -> " + this._latLng);
-			var l = this._latLng;
-			var m = this._marker;
-			setTimeout(function () {
-				m.setLatLng(l);
-			}, 0);
-		}
-
-		if (this._positionChanged) {
-			this._positionChanged = false;
-			this._marker.setLatLng(this._latLng);
-		}
-	},
-
+	
 	recalculateCenter: function () {
 		//Recalculate min/max X/Y
 
