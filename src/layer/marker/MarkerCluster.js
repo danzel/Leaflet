@@ -62,7 +62,7 @@
 	//Create our cluster marker and add it to the map
 	createCluster: function (startPos) {
 		this._marker = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
-		this._group._map.addLayer(this._marker);
+		L.FeatureGroup.prototype.addLayer.call(this._group, this._marker);
 	},
 
 	recursivelyAddChildrenToMap: function (startPos, depth) {
@@ -97,7 +97,7 @@
 			this.createCluster(startPos);
 		} else {
 			this._marker.setLatLng(startPos);
-			this._group._map.addLayer(this._marker);
+			L.FeatureGroup.prototype.addLayer.call(this._group, this._marker);
 		}
 	},
 
@@ -129,14 +129,14 @@
 		//markers
 		for (var i = 0; i < this._markers.length; i++) {
 			//TODO: animate removing
-			this._group._map.removeLayer(this._markers[i]);
+			L.FeatureGroup.prototype.removeLayer.call(this._group, this._markers[i]);
 		}
 
 		if (depth == 1) {
 			//child clusters
 			for (var j = 0; j < this._childClusters.length; j++) {
 				//TODO: animate removing
-				this._group._map.removeLayer(this._childClusters[j]._marker);
+				L.FeatureGroup.prototype.removeLayer.call(this._group, this._childClusters[j]._marker);
 			}
 		} else {
 			var childClusters = this._childClusters,
