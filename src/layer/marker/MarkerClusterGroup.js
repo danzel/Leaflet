@@ -188,37 +188,42 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	//Performs clustering on them (using a greedy algorithm) and returns those clusters.
 	//Returns { clusters: [], unclustered: [] }
 	_cluster: function (points, existingClusters, zoom) {
-
 		var clusterRadiusSqrd = this.options.maxClusterRadius * this.options.maxClusterRadius,
 		    clusters = existingClusters,
 		    unclustered = [],
 		    center = this._map.getCenter();
 
-		//Recalculate existing cluster centers
+		console.log('cluster ' + zoom + ' : ' + center);
+
+		//Calculate pixel positions
 		for (var j = 0; j < clusters.length; j++) {
 			var c = clusters[j];
-			c.center = this._map._latLngToNewLayerPoint(c.getLatLng(), zoom, center);
+			c._projCenter = this._map.project(c.getLatLng(), zoom);
 		}
+
+		for (var j2 = 0; j2 < points.length; j2++) {
+			var p2 = points[j2];
+			p2._projCenter = this._map.project(p2.getLatLng(), zoom);
+
+		}
+
 
 		//go through each point
 		for (var i = 0; i < points.length; i++) {
 			var point = points[i];
-			var pointPosition = this._map._latLngToNewLayerPoint(point.getLatLng(), zoom, center);
+
+			if (point._backupLatlng) {
+				throw "We still have a backup lat/lng";
+			}
 
 			var used = false;
 
 			//try add it to an existing cluster
 			for (var j = 0; j < clusters.length; j++) {
 				var c = clusters[j];
-				if (this._sqDist(pointPosition, c.center) <= clusterRadiusSqrd) {
+				if (this._sqDist(point._projCenter, c._projCenter) <= clusterRadiusSqrd) {
 					c._addChild(point);
-					//the cluster will set its center point based on the current map zoom level, so we need to recalculate it
-					if (zoom != this._map._zoom) {
-						var p = c.center;
-						c.center = this._map._latLngToNewLayerPoint(c.getLatLng(), zoom, center);
-						if (p != c.center)
-							console.log(p + ' -> ' + c.center);
-					}
+					c._projCenter = this._map.project(c.getLatLng(), zoom);
 
 					used = true;
 					break;
@@ -228,16 +233,12 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			//otherwise, look through all of the markers we haven't managed to cluster and see if we should form a cluster with them
 			if (!used) {
 				for (var k = 0 ; k < unclustered.length; k++) {
-					var kp = this._map.latLngToLayerPoint(unclustered[k].getLatLng());
-					if (this._sqDist(pointPosition, kp) <= clusterRadiusSqrd) {
+					if (this._sqDist(point._projCenter, unclustered[k]._projCenter) <= clusterRadiusSqrd) {
 						//Create a new cluster with these 2
 						var newCluster = new L.MarkerCluster(this, point, unclustered[k]);
 						clusters.push(newCluster);
 
-						//the cluster will set its center point based on the current map zoom level, so we need to recalculate it
-						if (zoom != this._map._zoom) {
-							newCluster.center = this._map._latLngToNewLayerPoint(newCluster.getLatLng(), zoom, center);
-						}
+						newCluster._projCenter = this._map.project(newCluster.getLatLng(), zoom);
 
 						unclustered.splice(k, 1);
 						used = true;
@@ -254,14 +255,17 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		for (var l = unclustered.length - 1; l >= 0; l--) {
 
 			var c = unclustered[l];
+			delete c._projCenter;
 
 			if (c instanceof L.MarkerCluster) {
-				clusters.push(new L.MarkerCluster(this, c));
+				var nc = new L.MarkerCluster(this, c);
+				clusters.push(nc);
 				unclustered.splice(l, 1);
 			}
 		}
 
 		for (var m = 0; m < clusters.length; m++) {
+			delete clusters[m]._projCenter;
 			clusters[m]._baseInit();
 		}
 

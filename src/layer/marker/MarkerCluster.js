@@ -85,7 +85,6 @@
 		if (boundsChanged) {
 			//Recalc center
 			this._latlng = new L.LatLng((this._minLat + this._maxLat) / 2, (this._minLng + this._maxLng) / 2);
-			this.center = this._group._map.latLngToLayerPoint(this._latlng).round();
 			this._positionChanged = true;
 		}
 	},
