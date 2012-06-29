@@ -1,4 +1,4 @@
-﻿L.MarkerCluster = L.Class.extend({
+﻿L.MarkerCluster = L.Marker.extend({
 	initialize: function (group, a, b) {
 		this._group = group;
 
@@ -6,13 +6,17 @@
 		this._childClusters = [];
 		this._childCount = 0;
 
-		this.add(a);
+		this._addChild(a);
 		if (b) {
-			this.add(b);
+			this._addChild(b);
 		}
 	},
 
-	add: function (new1) {
+	_baseInit: function () {
+		L.Marker.prototype.initialize.call(this, this._latlng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
+	},
+
+	_addChild: function (new1) {
 		if (new1 instanceof L.MarkerCluster) {
 			this._childClusters.push(new1);
 			this._childCount += new1._childCount;
@@ -22,10 +26,6 @@
 		}
 
 		this._expandBounds(new1);
-	},
-
-	getLatLng : function() {
-		return this._latLng;
 	},
 
 	recursivelyAnimateChildrenIn: function (center, depth) {
@@ -47,7 +47,7 @@
 
 		if (depth == 1) {
 			for (var j = 0; j < childClustersLength; j++) {
-				var cm = childClusters[j]._marker;
+				var cm = childClusters[j];
 				if (cm._icon) {
 					cm._setPos(center);
 				}
@@ -58,19 +58,13 @@
 			}
 		}
 	},
-	
-	//Create our cluster marker and add it to the map
-	createCluster: function (startPos) {
-		this._marker = new L.Marker(startPos || this._latLng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
-		L.FeatureGroup.prototype.addLayer.call(this._group, this._marker);
-	},
 
 	recursivelyAddChildrenToMap: function (startPos, depth) {
 
 		//Add its child markers (at startPos via HACK)
 		for (var l = 0; l < this._markers.length; l++) {
 			var nm = this._markers[l];
-			nm._backupLatLng = nm.getLatLng();
+			nm._backupLatlng = nm.getLatLng();
 
 			nm.setLatLng(startPos);
 			L.FeatureGroup.prototype.addLayer.call(this._group, nm);
@@ -93,20 +87,19 @@
 
 	//Set our markers position as given and add it to the map (Will create marker if required)
 	addToMap: function (startPos) {
-		if (!this._marker) {
-			this.createCluster(startPos);
-		} else {
-			this._marker.setLatLng(startPos);
-			L.FeatureGroup.prototype.addLayer.call(this._group, this._marker);
+		if (startPos) {
+			this._backupLatlng = this._latlng;
+			this.setLatLng(startPos);
 		}
+		L.FeatureGroup.prototype.addLayer.call(this._group, this);
 	},
 
 	recursivelyRepositionChildren: function (depth) {
 		//Fix positions of child markers
 		for (var l = 0; l < this._markers.length; l++) {
 			var nm = this._markers[l];
-			nm.setLatLng(nm._backupLatLng);
-			delete nm._backupLatLng;
+			nm.setLatLng(nm._backupLatlng);
+			delete nm._backupLatlng;
 		}
 
 		if (depth == 1) {
@@ -122,7 +115,8 @@
 	},
 
 	reposition: function () {
-		this._marker.setLatLng(this._latLng);
+		this.setLatLng(this._backupLatlng);
+		delete this._backupLatlng;
 	},
 
 	recursivelyRemoveChildrenFromMap: function (depth) {
@@ -136,7 +130,7 @@
 			//child clusters
 			for (var j = 0; j < this._childClusters.length; j++) {
 				//TODO: animate removing
-				L.FeatureGroup.prototype.removeLayer.call(this._group, this._childClusters[j]._marker);
+				L.FeatureGroup.prototype.removeLayer.call(this._group, this._childClusters[j]);
 			}
 		} else {
 			var childClusters = this._childClusters,
@@ -202,8 +196,8 @@
 
 		if (boundsChanged) {
 			//Recalc center
-			this._latLng = new L.LatLng((this._minLat + this._maxLat) / 2, (this._minLng + this._maxLng) / 2);
-			this.center = this._group._map.latLngToLayerPoint(this._latLng).round();
+			this._latlng = new L.LatLng((this._minLat + this._maxLat) / 2, (this._minLng + this._maxLng) / 2);
+			this.center = this._group._map.latLngToLayerPoint(this._latlng).round();
 			this._positionChanged = true;
 		}
 	},

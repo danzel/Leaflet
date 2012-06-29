@@ -44,7 +44,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 		//Make things appear on the map
 		for (var i = 0; i < res.clusters.length; i++) {
-			res.clusters[i].createCluster();
+			res.clusters[i].addToMap();
 		}
 		for (var j = 0; j < res.unclustered.length; j++) {
 			L.FeatureGroup.prototype.addLayer.call(this, res.unclustered[j]);
@@ -97,7 +97,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				var startPos = c.getLatLng();
 
 				//Remove old cluster
-				this._map.removeLayer(c._marker); //TODO Animate
+				L.FeatureGroup.prototype.removeLayer.call(this, c); //TODO Animate
 
 				c.recursivelyAddChildrenToMap(startPos, depth);
 			}
@@ -150,11 +150,10 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				//HACK
 				map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
 
-				//this.createClusters();
 				for (var j = 0; j < newClusters.length; j++) {
 					var cl = newClusters[j];
 
-					cl.createCluster();
+					cl.addToMap();
 					cl.recursivelyRemoveChildrenFromMap(depth);
 				}
 			}, 250);
@@ -212,7 +211,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			for (var j = 0; j < clusters.length; j++) {
 				var c = clusters[j];
 				if (this._sqDist(pointPosition, c.center) <= clusterRadiusSqrd) {
-					c.add(point);
+					c._addChild(point);
 					used = true;
 					break;
 				}
@@ -252,6 +251,10 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				clusters.push(new L.MarkerCluster(this, c));
 				unclustered.splice(l, 1);
 			}
+		}
+
+		for (var m = 0; m < clusters.length; m++) {
+			clusters[m]._baseInit();
 		}
 
 		return { 'clusters': clusters, 'unclustered': unclustered };
