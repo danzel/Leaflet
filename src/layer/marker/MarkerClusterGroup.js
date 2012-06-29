@@ -212,6 +212,14 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				var c = clusters[j];
 				if (this._sqDist(pointPosition, c.center) <= clusterRadiusSqrd) {
 					c._addChild(point);
+					//the cluster will set its center point based on the current map zoom level, so we need to recalculate it
+					if (zoom != this._map._zoom) {
+						var p = c.center;
+						c.center = this._map._latLngToNewLayerPoint(c.getLatLng(), zoom, center);
+						if (p != c.center)
+							console.log(p + ' -> ' + c.center);
+					}
+
 					used = true;
 					break;
 				}
