@@ -44,7 +44,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 		//Make things appear on the map
 		for (var i = 0; i < res.clusters.length; i++) {
-			res.clusters[i].addToMap();
+			res.clusters[i]._addToMap();
 		}
 		for (var j = 0; j < res.unclustered.length; j++) {
 			L.FeatureGroup.prototype.addLayer.call(this, res.unclustered[j]);
@@ -99,7 +99,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				//Remove old cluster
 				L.FeatureGroup.prototype.removeLayer.call(this, c); //TODO Animate
 
-				c.recursivelyAddChildrenToMap(startPos, depth);
+				c._recursivelyAddChildrenToMap(startPos, depth);
 			}
 
 
@@ -108,7 +108,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			setTimeout(function () {
 
 				for (var j = 0; j < startingClusters.length; j++) {
-					startingClusters[j].recursivelyRepositionChildren(depth);
+					startingClusters[j]._recursivelyRestoreChildPositions(depth);
 				}
 
 				setTimeout(function () {
@@ -141,7 +141,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			for (var i = 0; i < newClusters.length; i++) {
 				var c = newClusters[i];
 
-				c.recursivelyAnimateChildrenIn(this._map.latLngToLayerPoint(c.getLatLng()).round(), depth);
+				c._recursivelyAnimateChildrenIn(this._map.latLngToLayerPoint(c.getLatLng()).round(), depth);
 			}
 
 			//TODO: Use the transition timing stuff to make this more reliable
@@ -153,8 +153,8 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				for (var j = 0; j < newClusters.length; j++) {
 					var cl = newClusters[j];
 
-					cl.addToMap();
-					cl.recursivelyRemoveChildrenFromMap(depth);
+					cl._addToMap();
+					cl._recursivelyRemoveChildrenFromMap(depth);
 				}
 			}, 250);
 		}
