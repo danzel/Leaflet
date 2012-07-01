@@ -209,10 +209,6 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		for (var i = 0; i < points.length; i++) {
 			var point = points[i];
 
-			if (point._backupLatlng) {
-				throw "We still have a backup lat/lng";
-			}
-
 			var used = false;
 
 			//try add it to an existing cluster
@@ -250,7 +246,6 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 		//Any clusters that did not end up being a child of a new cluster, make them a child of a new cluster
 		for (var l = unclustered.length - 1; l >= 0; l--) {
-
 			var c = unclustered[l];
 			delete c._projCenter;
 
@@ -261,6 +256,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			}
 		}
 
+		//Remove the _projCenter temp variable from clusters
 		for (var m = 0; m < clusters.length; m++) {
 			delete clusters[m]._projCenter;
 			clusters[m]._baseInit();
