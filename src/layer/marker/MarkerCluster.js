@@ -28,7 +28,7 @@
 	},
 
 	_baseInit: function () {
-		L.Marker.prototype.initialize.call(this, this._latlng, { icon: new L.DivIcon({ innerHTML: this._childCount, className: 'hax-icon', iconSize: new L.Point(20, 18) }) });
+		L.Marker.prototype.initialize.call(this, this._latlng, { icon: this._group.options.iconCreateFunction(this._childCount) });
 	},
 
 	_addChild: function (new1) {
@@ -109,7 +109,6 @@
 
 			//Only do it if the icon is still on the map
 			if (m._icon) {
-				//m.setOpacity(0.5); //Hack to see which is which
 				m._setPos(center);
 				//TODO Scale them down as they move? Fade them as they move?
 			}
@@ -131,7 +130,7 @@
 
 	_recursivelyAddChildrenToMap: function (startPos, depth) {
 
-		//Add its child markers (at startPos via HACK)
+		//Add its child markers at startPos (so they can be animated out)
 		for (var l = 0; l < this._markers.length; l++) {
 			var nm = this._markers[l];
 			if (startPos) {

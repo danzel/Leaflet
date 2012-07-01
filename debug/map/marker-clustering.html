@@ -12,10 +12,11 @@
 
 	<script src="../leaflet-include.js"></script>
 	<style type="text/css">
-		.hax-icon {
+		.marker-cluster {
 			text-align: center;
 			border: 1px black solid;
 			background-color: white;
+			border-radius: 4px;
 		}
 	</style>
 </head>
@@ -23,7 +24,7 @@
 
 	<div id="map"></div>
 	<button id="populate">Populate with 10 markers</button>
-	<button id="cluster">cluster</button>
+	<!--<button id="cluster">cluster</button>-->
 
 	<script type="text/javascript">
 
@@ -45,13 +46,19 @@
 			return false;
 		}
 
-		markers.bindPopup("<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere a, pede.</p><p>Donec nec justo eget felis facilisis fermentum. Aliquam porttitor mauris sit amet orci. Aenean dignissim pellentesque.</p>");
-
+		//markers.bindPopup("<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere a, pede.</p><p>Donec nec justo eget felis facilisis fermentum. Aliquam porttitor mauris sit amet orci. Aenean dignissim pellentesque.</p>");
+		markers.on('click', function (a) {
+			console.log("clicka " + a);
+			if (a.layer instanceof L.MarkerCluster) {
+				console.log('cluster ' + a.layer.getAllChildMarkers().length);
+			}
+		});
 		populate();
 		map.addLayer(markers);
+		markers.generateInitialClusters();
 
 		L.DomUtil.get('populate').onclick = populate;
-		L.DomUtil.get('cluster').onclick = function () { markers.generateClusters(); };
+		//L.DomUtil.get('cluster').onclick = function () { markers.generateInitialClusters(); };
 
 		//setTimeout(function () { markers.generateClusters(); }, 2000);
 //		function logEvent(e) { console.log(e.type); }
