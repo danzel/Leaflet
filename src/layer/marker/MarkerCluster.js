@@ -1,4 +1,4 @@
-﻿L.MarkerCluster = L.Marker.extend({
+L.MarkerCluster = L.Marker.extend({
 	initialize: function (group, a, b) {
 		this._group = group;
 
@@ -114,7 +114,7 @@
 			}
 		}
 
-		if (depth == 1) {
+		if (depth === 1) {
 			for (var j = 0; j < childClustersLength; j++) {
 				var cm = childClusters[j];
 				if (cm._icon) {
@@ -122,8 +122,8 @@
 				}
 			}
 		} else {
-			for (var j = 0; j < childClustersLength; j++) {
-				childClusters[j]._recursivelyAnimateChildrenIn(center, depth - 1);
+			for (var k = 0; k < childClustersLength; k++) {
+				childClusters[k]._recursivelyAnimateChildrenIn(center, depth - 1);
 			}
 		}
 	},
@@ -131,8 +131,8 @@
 	_recursivelyAddChildrenToMap: function (startPos, depth) {
 
 		//Add its child markers at startPos (so they can be animated out)
-		for (var l = 0; l < this._markers.length; l++) {
-			var nm = this._markers[l];
+		for (var i = 0; i < this._markers.length; i++) {
+			var nm = this._markers[i];
 			if (startPos) {
 				nm._backupLatlng = nm.getLatLng();
 
@@ -142,11 +142,11 @@
 			L.FeatureGroup.prototype.addLayer.call(this._group, nm);
 		}
 
-		if (depth == 1) {
+		if (depth === 1) {
 
 			//Add its child clusters at startPos
-			for (var k = 0; k < this._childClusters.length; k++) {
-				this._childClusters[k]._addToMap(startPos);
+			for (var j = 0; j < this._childClusters.length; j++) {
+				this._childClusters[j]._addToMap(startPos);
 			}
 
 
@@ -159,16 +159,16 @@
 
 	_recursivelyRestoreChildPositions: function (depth) {
 		//Fix positions of child markers
-		for (var l = 0; l < this._markers.length; l++) {
-			var nm = this._markers[l];
+		for (var i = 0; i < this._markers.length; i++) {
+			var nm = this._markers[i];
 			nm.setLatLng(nm._backupLatlng);
 			delete nm._backupLatlng;
 		}
 
-		if (depth == 1) {
+		if (depth === 1) {
 			//Reposition child clusters
-			for (var k = 0; k < this._childClusters.length; k++) {
-				this._childClusters[k]._restorePosition();
+			for (var j = 0; j < this._childClusters.length; j++) {
+				this._childClusters[j]._restorePosition();
 			}
 		} else {
 			for (var k = 0; k < this._childClusters.length; k++) {
@@ -189,7 +189,7 @@
 			L.FeatureGroup.prototype.removeLayer.call(this._group, this._markers[i]);
 		}
 
-		if (depth == 1) {
+		if (depth === 1) {
 			//child clusters
 			for (var j = 0; j < this._childClusters.length; j++) {
 				//TODO: animate removing
@@ -199,8 +199,8 @@
 			var childClusters = this._childClusters,
 			    childClustersLength = childClusters.length;
 
-			for (var j = 0; j < childClustersLength; j++) {
-				childClusters[j]._recursivelyRemoveChildrenFromMap(depth - 1);
+			for (var k = 0; k < childClustersLength; k++) {
+				childClusters[k]._recursivelyRemoveChildrenFromMap(depth - 1);
 			}
 		}
 	}
