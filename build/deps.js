@@ -80,6 +80,12 @@ var deps = {
 		desc: 'Extends LayerGroup with mouse events and bindPopup method shared between layers.'
 	},
 
+	MarkerClusterGroup: {
+		src: ['layer/marker/MarkerCluster.js', 'layer/marker/MarkerClusterGroup.js'],
+		deps: ['FeatureGroup', 'Marker'],
+		desc: 'Extends FeatureGroup by clustering the Markers on it if they are within a given distance.'
+	},
+
 
 	Path: {
 		src: ['layer/vector/Path.js', 'layer/vector/Path.SVG.js', 'layer/vector/Path.Popup.js'],
