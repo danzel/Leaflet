@@ -74,8 +74,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 						if (currentClusters[i]._childClusters.length > 0) {
 
 							//Child clusters should always be 0 as we haven't calculated clusters for this level
-							console.log('something is wrong, childClusters length should be 0: ' + currentClusters[i]._childClusters.length);
-							throw "";
+							throw 'something is wrong, childClusters length should be 0: ' + currentClusters[i]._childClusters.length;
 						} else {
 							newClusters = this._cluster(currentClusters[i]._markers, [], this._zoom);
 						}
@@ -192,8 +191,6 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		    clusters = existingClusters,
 		    unclustered = [],
 		    center = this._map.getCenter();
-
-		console.log('cluster ' + zoom + ' : ' + center);
 
 		//Calculate pixel positions
 		for (var j = 0; j < clusters.length; j++) {
