@@ -134,9 +134,12 @@
 		//Add its child markers (at startPos via HACK)
 		for (var l = 0; l < this._markers.length; l++) {
 			var nm = this._markers[l];
-			nm._backupLatlng = nm.getLatLng();
+			if (startPos) {
+				nm._backupLatlng = nm.getLatLng();
 
-			nm.setLatLng(startPos);
+				nm.setLatLng(startPos);
+			}
+
 			L.FeatureGroup.prototype.addLayer.call(this._group, nm);
 		}
 

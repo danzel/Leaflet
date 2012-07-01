@@ -28,8 +28,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	},
 
 	zoomEnd: function () {
-		//HACK
-		this._map._mapPane.className += ' leaflet-zoom-anim';
+		this._animationStart();
 
 		this._mergeSplitClusters();
 
@@ -55,11 +54,11 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	_mergeSplitClusters: function () {
 		var map = this._map;
 
-		if (this._zoom < this._map._zoom) {
+		if (this._zoom < this._map._zoom) { //Zoom in, split
 			var depth = this._map._zoom - this._zoom;
 			var startingClusters = this._markersAndClustersAtZoom[this._zoom].clusters;
 
-			while (this._zoom < this._map._zoom) { //Zoom in, split
+			while (this._zoom < this._map._zoom) { //Split each intermediate layer if required
 				var currentClusters = this._markersAndClustersAtZoom[this._zoom].clusters;
 
 				this._zoom++;
@@ -90,32 +89,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				}
 			}
 
-			//Add all children of current clusters to map and remove those clusters from map
-			for (var j = 0; j < startingClusters.length; j++) {
-				var c = startingClusters[j];
-				var startPos = c.getLatLng();
-
-				//Remove old cluster
-				L.FeatureGroup.prototype.removeLayer.call(this, c); //TODO Animate
-
-				c._recursivelyAddChildrenToMap(startPos, depth);
-			}
-
-
-			//Start up a function to update the positions of the just added clusters/markers
-			//This must happen after otherwise they don't get animated
-			setTimeout(function () {
-
-				for (var j = 0; j < startingClusters.length; j++) {
-					startingClusters[j]._recursivelyRestoreChildPositions(depth);
-				}
-
-				setTimeout(function () {
-					//HACK
-					map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
-
-				}, 250);
-			}, 0);
+			this._animationZoomIn(startingClusters, depth);
 
 		} else if (this._zoom > this._map._zoom) { //Zoom out, merge
 
@@ -135,27 +109,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				}
 			}
 
-			//Animate all of the markers in the clusters to move to their cluster center point
-			var newClusters = newState.clusters;
-			for (var i = 0; i < newClusters.length; i++) {
-				var c = newClusters[i];
-
-				c._recursivelyAnimateChildrenIn(this._map.latLngToLayerPoint(c.getLatLng()).round(), depth);
-			}
-
-			//TODO: Use the transition timing stuff to make this more reliable
-			setTimeout(function() {
-
-				//HACK
-				map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
-
-				for (var j = 0; j < newClusters.length; j++) {
-					var cl = newClusters[j];
-
-					cl._addToMap();
-					cl._recursivelyRemoveChildrenFromMap(depth);
-				}
-			}, 250);
+			this._animationZoomOut(newState.clusters, depth);
 		}
 	},
 
@@ -263,5 +217,89 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		}
 
 		return { 'clusters': clusters, 'unclustered': unclustered };
+	}
+});
+
+L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
+
+	//Non Animated versions of everything
+	_animationStart: function () {
+		//Do nothing...
+	},
+	_animationZoomIn: function (startingClusters, depth) {
+		//Add all children of current clusters to map and remove those clusters from map
+		for (var j = 0; j < startingClusters.length; j++) {
+			var c = startingClusters[j];
+
+			//Remove old cluster
+			L.FeatureGroup.prototype.removeLayer.call(this, c); //TODO Animate
+
+			c._recursivelyAddChildrenToMap(null, depth);
+		}
+	},
+	_animationZoomOut: function (newClusters, depth) {
+		//Just add new and remove old from the map
+		for (var j = 0; j < newClusters.length; j++) {
+			var cl = newClusters[j];
+
+			cl._addToMap();
+			cl._recursivelyRemoveChildrenFromMap(depth);
+		}
+	}
+} : {
+
+	//Animated versions here
+	_animationStart: function () {
+		this._map._mapPane.className += ' leaflet-zoom-anim'; //Hack
+	},
+	_animationZoomIn: function (startingClusters, depth) {
+		//Add all children of current clusters to map and remove those clusters from map
+		for (var j = 0; j < startingClusters.length; j++) {
+			var c = startingClusters[j];
+			var startPos = c.getLatLng();
+
+			//Remove old cluster
+			L.FeatureGroup.prototype.removeLayer.call(this, c); //TODO Animate
+
+			c._recursivelyAddChildrenToMap(startPos, depth);
+		}
+
+
+		//Start up a function to update the positions of the just added clusters/markers
+		//This must happen after otherwise they don't get animated
+		setTimeout(function () {
+
+			for (var j = 0; j < startingClusters.length; j++) {
+				startingClusters[j]._recursivelyRestoreChildPositions(depth);
+			}
+
+			setTimeout(function () {
+				//HACK
+				map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
+
+			}, 250);
+		}, 0);
+	},
+	_animationZoomOut: function (newClusters, depth) {
+		//Animate all of the markers in the clusters to move to their cluster center point
+		for (var i = 0; i < newClusters.length; i++) {
+			var c = newClusters[i];
+
+			c._recursivelyAnimateChildrenIn(this._map.latLngToLayerPoint(c.getLatLng()).round(), depth);
+		}
+
+		//TODO: Use the transition timing stuff to make this more reliable
+		setTimeout(function () {
+
+			//HACK
+			map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
+
+			for (var j = 0; j < newClusters.length; j++) {
+				var cl = newClusters[j];
+
+				cl._addToMap();
+				cl._recursivelyRemoveChildrenFromMap(depth);
+			}
+		}, 250);
 	}
 });
