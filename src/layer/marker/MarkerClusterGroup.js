@@ -38,7 +38,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		this._zoom = this._map._zoom;
 	},
 
-	generateInitialClusters: function () {
+	_generateInitialClusters: function () {
 		var res = this._cluster(this._needsClustering, [], this._map.getZoom());
 
 		this._markersAndClustersAtZoom[this._map._zoom] = res;
@@ -135,6 +135,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	onAdd: function (map) {
 		L.FeatureGroup.prototype.onAdd.call(this, map); // LayerGroup
 
+		this._generateInitialClusters();
 		this._map.on('zoomend', this.zoomEnd, this);
 	},
 
@@ -251,7 +252,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 
 	//Animated versions here
 	_animationStart: function () {
-		this._map._mapPane.className += ' leaflet-zoom-anim'; //Hack
+		this._map._mapPane.className += ' leaflet-cluster-anim'; //Hack
 	},
 	_animationZoomIn: function (startingClusters, depth) {
 		var map = this._map;
@@ -278,7 +279,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 
 			setTimeout(function () {
 				//HACK
-				map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
+				map._mapPane.className = map._mapPane.className.replace(' leaflet-cluster-anim', '');
 
 			}, 250);
 		}, 0);
@@ -297,7 +298,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 		setTimeout(function () {
 
 			//HACK
-			map._mapPane.className = map._mapPane.className.replace(' leaflet-zoom-anim', '');
+			map._mapPane.className = map._mapPane.className.replace(' leaflet-cluster-anim', '');
 
 			for (var j = 0; j < newClusters.length; j++) {
 				var cl = newClusters[j];
