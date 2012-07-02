@@ -252,7 +252,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 
 	//Animated versions here
 	_animationStart: function () {
-		this._map._mapPane.className += ' leaflet-cluster-anim'; //Hack
+		this._map._mapPane.className += ' leaflet-cluster-anim';
 	},
 	_animationZoomIn: function (startingClusters, depth) {
 		var map = this._map;
@@ -278,7 +278,6 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 			}
 
 			setTimeout(function () {
-				//HACK
 				map._mapPane.className = map._mapPane.className.replace(' leaflet-cluster-anim', '');
 
 			}, 250);
@@ -297,7 +296,6 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 		//TODO: Use the transition timing stuff to make this more reliable
 		setTimeout(function () {
 
-			//HACK
 			map._mapPane.className = map._mapPane.className.replace(' leaflet-cluster-anim', '');
 
 			for (var j = 0; j < newClusters.length; j++) {
