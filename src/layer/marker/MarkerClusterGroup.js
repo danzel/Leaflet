@@ -7,9 +7,18 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 	options: {
 		//distanceToCluster: 10, //Any points closer than this will probably get put in to a cluster
-		maxClusterRadius: 40, //A cluster will cover at most this many pixels from its center
+		maxClusterRadius: 60, //A cluster will cover at most this many pixels from its center
 		iconCreateFunction: function (childCount) {
-			return new L.DivIcon({ innerHTML: childCount, elementType: 'span', className: 'marker-cluster', iconSize: new L.Point(4 + 8 * Math.ceil(Math.log(1 + childCount) / Math.LN10), 20) });
+			var c = ' marker-cluster-';
+			if (childCount < 10) {
+				c += 'small';
+			} else if (childCount < 100) {
+				c += 'medium';
+			} else {
+				c += 'large';
+			}
+
+			return new L.DivIcon({ innerHTML: '<div><span>' + childCount + '</span></div>', elementType: 'span', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
 		}
 	},
 
