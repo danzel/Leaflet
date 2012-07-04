@@ -53,11 +53,12 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		}
 
 		var l, i,
-			layers = this._layers,
+		    layers = this._layers,
 		    bounds = this._getExpandedVisibleBounds(),
-		    now = this._markersAndClustersAtZoom[this._zoom],
-			currentClusters = now.clusters,
-			currentMarkers = now.unclustered;
+		    highestLevel = this._markersAndClustersAtZoom[this._highestZoom],
+		    depth = this._zoom - this._highestZoom,
+		    highestLevelClusters = highestLevel.clusters,
+		    highestLevelUnclustered = highestLevel.unclustered;
 
 		//Remove visible layers that are no longer visible
 		for (i in layers) {
@@ -68,26 +69,29 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		}
 
 		//Re-Check everyone for being in the viewport
-		for (i = 0; i < currentClusters.length; i++) {
-			l = currentClusters[i];
+		//Do the clusters (and their child unclustered ones) recursively for performance
+		for (i = 0; i < highestLevelClusters.length; i++) {
+			l = highestLevelClusters[i];
 			if (bounds.contains(l.getLatLng())) {
-				L.FeatureGroup.prototype.addLayer.call(this, l);
-			}
-		}
-		for (i = 0; i < currentMarkers.length; i++) {
-			l = currentMarkers[i];
-			if (bounds.contains(l.getLatLng())) {
-				L.FeatureGroup.prototype.addLayer.call(this, l);
+				l._recursivelyAddChildrenToMap(null, depth, bounds);
 			}
 		}
 
+		//Do the markers at this level too
+		for (i = 0; i < highestLevelUnclustered.length; i++) {
+			l = highestLevelUnclustered[i];
+			if (bounds.contains(l.getLatLng())) {
+				L.FeatureGroup.prototype.addLayer.call(this, l);
+			}
+		}
 	},
 
 	_generateInitialClusters: function () {
 		var res = this._cluster(this._needsClustering, [], this._map.getZoom());
 
 		this._markersAndClustersAtZoom[this._map._zoom] = res;
-		this._zoom = this._map._zoom;
+		//Remember the highest zoom level we've seen and the current zoom level
+		this._highestZoom = this._zoom = this._map._zoom;
 
 		//Make things appear on the map
 		for (var i = 0; i < res.clusters.length; i++) {
@@ -133,8 +137,6 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 						newState.clusters = newState.clusters.concat(newClusters.clusters);
 						newState.unclustered = newState.unclustered.concat(newClusters.unclustered);
 					}
-					//HACK - remember the unclustered ones from the level above too (so we can use them in _moveEnd)
-					newState.unclustered = newState.unclustered.concat(this._markersAndClustersAtZoom[this._zoom - 1].unclustered);
 
 					this._markersAndClustersAtZoom[this._zoom] = newState;
 				}
@@ -143,6 +145,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			this._animationZoomIn(startingClusters, depth);
 
 		} else if (this._zoom > this._map._zoom) { //Zoom out, merge
+			this._highestZoom = Math.min(this._highestZoom, this._map._zoom);
 
 			//Ensure all of the intermediate zoom levels are generated
 			var now;
