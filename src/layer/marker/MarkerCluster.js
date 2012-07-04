@@ -6,6 +6,8 @@ L.MarkerCluster = L.Marker.extend({
 		this._childClusters = [];
 		this._childCount = 0;
 
+		this._bounds = new L.LatLngBounds();
+
 		this._addChild(a);
 		if (b) {
 			this._addChild(b);
@@ -45,49 +47,14 @@ L.MarkerCluster = L.Marker.extend({
 
 	//TODO: Replace with L.LatLngBounds
 	_expandBounds: function (marker) {
-		var minLatLng = marker.getLatLng(),
-			maxLatLng = marker.getLatLng();
 
 		if (marker instanceof L.MarkerCluster) {
-			minLatLng = new L.LatLng(marker._minLat, marker._minLng);
-			maxLatLng = new L.LatLng(marker._maxLat, marker._maxLng);
+			this._bounds.extend(marker._bounds);
+		} else {
+			this._bounds.extend(marker.getLatLng());
 		}
 
-		var boundsChanged = false;
-
-		if (!this._hasBounds) {
-			this._minLat = minLatLng.lat;
-			this._maxLat = maxLatLng.lat;
-			this._minLng = minLatLng.lng;
-			this._maxLng = maxLatLng.lng;
-			this._hasBounds = true;
-			boundsChanged = true;
-		}
-		else {
-			if (minLatLng.lat < this._minLat) {
-				this._minLat = minLatLng.lat;
-				boundsChanged = true;
-			}
-			if (maxLatLng.lat > this._maxLat) {
-				this._maxLat = maxLatLng.lat;
-				boundsChanged = true;
-			}
-
-			if (minLatLng.lng < this._minLng) {
-				this._minLng = minLatLng.lng;
-				boundsChanged = true;
-			}
-			if (maxLatLng.lng > this._maxLng) {
-				this._maxLng = maxLatLng.lng;
-				boundsChanged = true;
-			}
-		}
-
-		if (boundsChanged) {
-			//Recalc center
-			this._latlng = new L.LatLng((this._minLat + this._maxLat) / 2, (this._minLng + this._maxLng) / 2);
-			this._positionChanged = true;
-		}
+		this._latlng = this._bounds.getCenter();
 	},
 
 	//Set our markers position as given and add it to the map
