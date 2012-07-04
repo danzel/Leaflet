@@ -39,12 +39,44 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		return dx * dx + dy * dy;
 	},
 
-	zoomEnd: function () {
+	_zoomEnd: function () {
 		this._animationStart();
 
 		this._mergeSplitClusters();
 
 		this._zoom = this._map._zoom;
+	},
+
+	_moveEnd: function () {
+		var l, i,
+			layers = this._layers,
+		    bounds = this._getExpandedVisibleBounds(),
+		    now = this._markersAndClustersAtZoom[this._zoom],
+			currentClusters = now.clusters,
+			currentMarkers = now.unclustered;
+
+		//Remove visible layers that are no longer visible
+		for (i in layers) {
+			l = layers[i];
+			if (!bounds.contains(l.getLatLng())) {
+				L.FeatureGroup.prototype.removeLayer.call(this, l);
+			}
+		}
+
+		//Re-Check everyone for being in the viewport
+		for (i = 0; i < currentClusters.length; i++) {
+			l = currentClusters[i];
+			if (bounds.contains(l.getLatLng())) {
+				L.FeatureGroup.prototype.addLayer.call(this, l);
+			}
+		}
+		for (i = 0; i < currentMarkers.length; i++) {
+			l = currentMarkers[i];
+			if (bounds.contains(l.getLatLng())) {
+				L.FeatureGroup.prototype.addLayer.call(this, l);
+			}
+		}
+
 	},
 
 	_generateInitialClusters: function () {
@@ -97,6 +129,8 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 						newState.clusters = newState.clusters.concat(newClusters.clusters);
 						newState.unclustered = newState.unclustered.concat(newClusters.unclustered);
 					}
+					//HACK - remember the unclustered ones from the level above too (so we can use them in _moveEnd)
+					newState.unclustered = newState.unclustered.concat(this._markersAndClustersAtZoom[this._zoom - 1].unclustered);
 
 					this._markersAndClustersAtZoom[this._zoom] = newState;
 				}
@@ -145,7 +179,8 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		L.FeatureGroup.prototype.onAdd.call(this, map); // LayerGroup
 
 		this._generateInitialClusters();
-		this._map.on('zoomend', this.zoomEnd, this);
+		this._map.on('zoomend', this._zoomEnd, this);
+		this._map.on('moveend', this._moveEnd, this);
 	},
 
 	//Takes a list of objects that have a 'getLatLng()' function (Marker / MarkerCluster)
