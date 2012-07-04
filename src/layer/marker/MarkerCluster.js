@@ -130,7 +130,7 @@ L.MarkerCluster = L.Marker.extend({
 		} else {
 			for (var k = 0; k < this._childClusters.length; k++) {
 				var cc = this._childClusters[k];
-				if (bounds.intersects(cc.bounds)) {
+				if (bounds.intersects(cc._bounds)) {
 					cc._recursivelyAddChildrenToMap(startPos, depth - 1, bounds);
 				}
 			}
