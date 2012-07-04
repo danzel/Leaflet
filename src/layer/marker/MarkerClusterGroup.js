@@ -48,6 +48,10 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	},
 
 	_moveEnd: function () {
+		if (this._inZoomAnimation) {
+			return;
+		}
+
 		var l, i,
 			layers = this._layers,
 		    bounds = this._getExpandedVisibleBounds(),
@@ -331,7 +335,8 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 			c._recursivelyAddChildrenToMap(startPos, depth, bounds);
 		}
 
-
+		this._inZoomAnimation = true;
+		var me = this;
 		//Start up a function to update the positions of the just added clusters/markers
 		//This must happen after otherwise they don't get animated
 		setTimeout(function () {
@@ -342,7 +347,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 
 			setTimeout(function () {
 				map._mapPane.className = map._mapPane.className.replace(' leaflet-cluster-anim', '');
-
+				me._inZoomAnimation = false;
 			}, 250);
 		}, 0);
 	},
@@ -357,6 +362,8 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 			c._recursivelyAnimateChildrenIn(this._map.latLngToLayerPoint(c.getLatLng()).round(), depth);
 		}
 
+		this._inZoomAnimation = true;
+		var me = this;
 		//TODO: Use the transition timing stuff to make this more reliable
 		setTimeout(function () {
 
@@ -369,6 +376,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 				}
 				cl._recursivelyRemoveChildrenFromMap(depth);
 			}
+			me._inZoomAnimation = false;
 		}, 250);
 	}
 });
