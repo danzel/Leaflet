@@ -120,13 +120,19 @@ L.MarkerCluster = L.Marker.extend({
 
 			//Add its child clusters at startPos
 			for (var j = 0; j < this._childClusters.length; j++) {
-				this._childClusters[j]._addToMap(startPos);
+				var c = this._childClusters[j];
+				if (bounds.intersects(c._bounds)) {
+					c._addToMap(startPos);
+				}
 			}
 
 
 		} else {
 			for (var k = 0; k < this._childClusters.length; k++) {
-				this._childClusters[k]._recursivelyAddChildrenToMap(startPos, depth - 1, bounds);
+				var cc = this._childClusters[k];
+				if (bounds.intersects(cc.bounds)) {
+					cc._recursivelyAddChildrenToMap(startPos, depth - 1, bounds);
+				}
 			}
 		}
 	},
@@ -154,8 +160,10 @@ L.MarkerCluster = L.Marker.extend({
 	},
 
 	_restorePosition: function () {
-		this.setLatLng(this._backupLatlng);
-		delete this._backupLatlng;
+		if (this._backupLatlng) {
+			this.setLatLng(this._backupLatlng);
+			delete this._backupLatlng;
+		}
 	},
 
 	_recursivelyRemoveChildrenFromMap: function (depth) {
