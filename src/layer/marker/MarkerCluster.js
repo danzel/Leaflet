@@ -98,7 +98,12 @@ L.MarkerCluster = L.Marker.extend({
 
 	_recursivelyAddChildrenToMap: function (startPos, depth, bounds) {
 
-		//Add its child markers at startPos (so they can be animated out)
+		if (depth === 0) {
+			this._addToMap(startPos);
+			return;
+		}
+
+		//Add our child markers at startPos (so they can be animated out)
 		for (var i = 0; i < this._markers.length; i++) {
 			var nm = this._markers[i];
 
@@ -116,23 +121,11 @@ L.MarkerCluster = L.Marker.extend({
 			L.FeatureGroup.prototype.addLayer.call(this._group, nm);
 		}
 
-		if (depth === 1) {
-
-			//Add its child clusters at startPos
-			for (var j = 0; j < this._childClusters.length; j++) {
-				var c = this._childClusters[j];
-				if (bounds.intersects(c._bounds)) {
-					c._addToMap(startPos);
-				}
-			}
-
-
-		} else {
-			for (var k = 0; k < this._childClusters.length; k++) {
-				var cc = this._childClusters[k];
-				if (bounds.intersects(cc._bounds)) {
-					cc._recursivelyAddChildrenToMap(startPos, depth - 1, bounds);
-				}
+		//Recurse down to child clusters
+		for (var k = 0; k < this._childClusters.length; k++) {
+			var cc = this._childClusters[k];
+			if (bounds.intersects(cc._bounds)) {
+				cc._recursivelyAddChildrenToMap(startPos, depth - 1, bounds);
 			}
 		}
 	},
