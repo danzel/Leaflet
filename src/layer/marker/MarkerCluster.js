@@ -43,6 +43,7 @@ L.MarkerCluster = L.Marker.extend({
 		this._expandBounds(new1);
 	},
 
+	//TODO: Replace with L.LatLngBounds
 	_expandBounds: function (marker) {
 		var minLatLng = marker.getLatLng(),
 			maxLatLng = marker.getLatLng();
@@ -128,16 +129,22 @@ L.MarkerCluster = L.Marker.extend({
 		}
 	},
 
-	_recursivelyAddChildrenToMap: function (startPos, depth) {
+	_recursivelyAddChildrenToMap: function (startPos, depth, bounds) {
 
 		//Add its child markers at startPos (so they can be animated out)
 		for (var i = 0; i < this._markers.length; i++) {
 			var nm = this._markers[i];
+
+			if (!bounds.contains(nm._latlng)) {
+				continue;
+			}
+
 			if (startPos) {
 				nm._backupLatlng = nm.getLatLng();
 
 				nm.setLatLng(startPos);
 			}
+
 
 			L.FeatureGroup.prototype.addLayer.call(this._group, nm);
 		}
@@ -152,7 +159,7 @@ L.MarkerCluster = L.Marker.extend({
 
 		} else {
 			for (var k = 0; k < this._childClusters.length; k++) {
-				this._childClusters[k]._recursivelyAddChildrenToMap(startPos, depth - 1);
+				this._childClusters[k]._recursivelyAddChildrenToMap(startPos, depth - 1, bounds);
 			}
 		}
 	},
@@ -161,8 +168,10 @@ L.MarkerCluster = L.Marker.extend({
 		//Fix positions of child markers
 		for (var i = 0; i < this._markers.length; i++) {
 			var nm = this._markers[i];
-			nm.setLatLng(nm._backupLatlng);
-			delete nm._backupLatlng;
+			if (nm._backupLatlng) {
+				nm.setLatLng(nm._backupLatlng);
+				delete nm._backupLatlng;
+			}
 		}
 
 		if (depth === 1) {

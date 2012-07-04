@@ -228,6 +228,18 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 		}
 
 		return { 'clusters': clusters, 'unclustered': unclustered };
+	},
+
+	//Gets the maps visible bounds expanded in each direction by the size of the screen (so the user cannot see an area we do not cover in one pan)
+	_getExpandedVisibleBounds: function () {
+		var map = this._map,
+			bounds = map.getPixelBounds(),
+			width = 0,//Math.abs(bounds.max.x - bounds.min.x),
+			height = 0,//Math.abs(bounds.max.y - bounds.min.y),
+			sw = map.unproject(new L.Point(bounds.min.x - width, bounds.min.y - height)),
+			ne = map.unproject(new L.Point(bounds.max.x + width, bounds.max.y + height));
+		
+		return new L.LatLngBounds(sw, ne);
 	}
 });
 
@@ -238,6 +250,8 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 		//Do nothing...
 	},
 	_animationZoomIn: function (startingClusters, depth) {
+		var bounds = this._getExpandedVisibleBounds();
+
 		//Add all children of current clusters to map and remove those clusters from map
 		for (var j = 0; j < startingClusters.length; j++) {
 			var c = startingClusters[j];
@@ -245,15 +259,19 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 			//Remove old cluster
 			L.FeatureGroup.prototype.removeLayer.call(this, c); //TODO Animate
 
-			c._recursivelyAddChildrenToMap(null, depth);
+			c._recursivelyAddChildrenToMap(null, depth, bounds);
 		}
 	},
 	_animationZoomOut: function (newClusters, depth) {
+		var bounds = this._getExpandedVisibleBounds();
+
 		//Just add new and remove old from the map
 		for (var j = 0; j < newClusters.length; j++) {
 			var cl = newClusters[j];
 
-			cl._addToMap();
+			if (bounds.contains(cl._latlng)) {
+				cl._addToMap();
+			}
 			cl._recursivelyRemoveChildrenFromMap(depth);
 		}
 	}
@@ -264,7 +282,8 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 		this._map._mapPane.className += ' leaflet-cluster-anim';
 	},
 	_animationZoomIn: function (startingClusters, depth) {
-		var map = this._map;
+		var map = this._map,
+		    bounds = this._getExpandedVisibleBounds();
 
 		//Add all children of current clusters to map and remove those clusters from map
 		for (var j = 0; j < startingClusters.length; j++) {
@@ -274,7 +293,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 			//Remove old cluster
 			L.FeatureGroup.prototype.removeLayer.call(this, c); //TODO Animate
 
-			c._recursivelyAddChildrenToMap(startPos, depth);
+			c._recursivelyAddChildrenToMap(startPos, depth, bounds);
 		}
 
 
@@ -293,7 +312,8 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 		}, 0);
 	},
 	_animationZoomOut: function (newClusters, depth) {
-		var map = this._map;
+		var map = this._map,
+		    bounds = this._getExpandedVisibleBounds();
 
 		//Animate all of the markers in the clusters to move to their cluster center point
 		for (var i = 0; i < newClusters.length; i++) {
@@ -309,8 +329,9 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 
 			for (var j = 0; j < newClusters.length; j++) {
 				var cl = newClusters[j];
-
-				cl._addToMap();
+				if (bounds.contains(cl._latlng)) {
+					cl._addToMap();
+				}
 				cl._recursivelyRemoveChildrenFromMap(depth);
 			}
 		}, 250);
