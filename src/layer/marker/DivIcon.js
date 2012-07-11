@@ -11,7 +11,6 @@ L.DivIcon = L.Icon.extend({
 	},
 
 	createIcon: function () {
-<<<<<<< HEAD
 		var div = document.createElement('div'),
 		    options = this.options;
 
@@ -24,11 +23,6 @@ L.DivIcon = L.Icon.extend({
 					(-options.bgPos.x) + 'px ' + (-options.bgPos.y) + 'px';
 		}
 
-=======
-		var div = document.createElement('div');
-		if (this.options.innerHTML) {
-			div.innerHTML = this.options.innerHTML;
-		}
 		this._setIconStyles(div, 'icon');
 		return div;
 	},
