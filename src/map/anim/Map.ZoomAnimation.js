@@ -35,7 +35,7 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 
 		var origin = this._getCenterLayerPoint().add(offset);
 
-		this._prepareTileBg();
+		this._prepareTileBg(Math.max(0.5, 1 / scale));
 		this._runAnimation(center, zoom, scale, origin);
 
 		return true;
@@ -71,7 +71,7 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 			scaleStr + ' ' + oldTransform;
 	},
 
-	_prepareTileBg: function () {
+	_prepareTileBg: function (invScale) {
 		var tilePane = this._tilePane,
 			tileBg = this._tileBg;
 
@@ -105,7 +105,7 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 
 		L.DomUtil.addClass(newTileBg, 'leaflet-zoom-animated');
 
-		this._stopLoadingImages(newTileBg);
+		this._stopLoadingImages(newTileBg, invScale);
 	},
 
 	_getLoadedTilesPercentage: function (container) {
@@ -121,7 +121,7 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 	},
 
 	// stops loading all tiles in the background layer
-	_stopLoadingImages: function (container) {
+	_stopLoadingImages: function (container, invScale) {
 		var tiles = Array.prototype.slice.call(container.getElementsByTagName('img')),
 			i, len, tile;
 
@@ -134,6 +134,11 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 				tile.src = L.Util.emptyImageUrl;
 
 				tile.parentNode.removeChild(tile);
+			} else if (L.Browser.gecko) {
+				//Work around the firefox scale bug https://github.com/CloudMade/Leaflet/issues/1066
+				//invScale is not used for anything else
+				tile.style.width = (parseInt(tile.style.width) + invScale) + 'px';
+				tile.style.height = (parseInt(tile.style.height) + invScale) + 'px';
 			}
 		}
 	},
