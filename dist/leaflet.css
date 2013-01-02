@@ -11,8 +11,7 @@
 .leaflet-popup-pane,
 .leaflet-overlay-pane svg,
 .leaflet-zoom-box,
-.leaflet-image-layer,
-.leaflet-layer {
+.leaflet-image-layer {
 	position: absolute;
 	left: 0;
 	top: 0;
