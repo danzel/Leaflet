@@ -77,6 +77,7 @@ L.Control.Layers = L.Control.extend({
 		if (this.options.collapsed) {
 			L.DomEvent
 			    .on(container, 'mouseover', this._expand, this)
+			    .on(container, 'mouseout', function() { alert('mouseout'); })
 			    .on(container, 'mouseout', this._collapse, this);
 
 			var link = this._layersLink = L.DomUtil.create('a', className + '-toggle', container);
@@ -93,6 +94,7 @@ L.Control.Layers = L.Control.extend({
 				L.DomEvent.on(link, 'focus', this._expand, this);
 			}
 
+			this._map.on('movestart', function() { alert('movestart'); });
 			this._map.on('movestart', this._collapse, this);
 			// TODO keyboard accessibility
 		} else {
