@@ -707,6 +707,11 @@ L.Map = L.Class.extend({
 
 		type = (type === 'mouseenter' ? 'mouseover' : (type === 'mouseleave' ? 'mouseout' : type));
 
+		//stop tile image dragging
+		if (type === 'mousedown') {
+			L.DomEvent.preventDefault(e);
+		}
+
 		if (!this.hasEventListeners(type)) { return; }
 
 		if (type === 'contextmenu') {
