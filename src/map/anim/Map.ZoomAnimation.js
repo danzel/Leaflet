@@ -65,18 +65,18 @@ L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 
 		if (!forTouchZoom) {
 			this._animatingZoom = true;
-		}
 
-		// put transform transition on all layers with leaflet-zoom-animated class
-		L.DomUtil.addClass(this._mapPane, 'leaflet-zoom-anim');
+			// put transform transition on all layers with leaflet-zoom-animated class
+			L.DomUtil.addClass(this._mapPane, 'leaflet-zoom-anim');
 
-		// remember what center/zoom to set after animation
-		this._animateToCenter = center;
-		this._animateToZoom = zoom;
+			// remember what center/zoom to set after animation
+			this._animateToCenter = center;
+			this._animateToZoom = zoom;
 
-		// disable any dragging during animation
-		if (L.Draggable) {
-			L.Draggable._disabled = true;
+			// disable any dragging during animation
+			if (L.Draggable) {
+				L.Draggable._disabled = true;
+			}
 		}
 
 		this.fire('zoomanim', {
