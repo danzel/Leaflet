@@ -25,7 +25,7 @@ if (L.DomUtil.TRANSITION) {
 L.Map.include(!L.DomUtil.TRANSITION ? {} : {
 
 	_catchTransitionEnd: function (e) {
-		if (this._animatingZoom && e.propertyName.indexOf('transform') >= 0) {
+		if (this._animatingZoom && e.propertyName.indexOf('transform') >= 0 && !L.DomUtil.hasClass(this._mapPane, 'leaflet-touching')) {
 			this._onZoomTransitionEnd();
 		}
 	},
