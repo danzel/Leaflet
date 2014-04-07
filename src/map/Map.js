@@ -475,6 +475,8 @@ L.Map = L.Evented.extend({
 
 	_resetView: function (center, zoom, preserveMapOffset, afterZoomAnim) {
 
+		center = center.wrap();
+
 		var zoomChanged = (this._zoom !== zoom);
 
 		if (!afterZoomAnim) {
