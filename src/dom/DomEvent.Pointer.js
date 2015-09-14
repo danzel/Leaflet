@@ -49,7 +49,7 @@ L.extend(L.DomEvent, {
 
 	_addPointerStart: function (obj, handler, id) {
 		var onDown = L.bind(function (e) {
-			if (e.pointerType !== 'mouse') {
+			if (e.pointerType !== 'mouse' && e.pointerType !== e.MSPOINTER_TYPE_MOUSE) {
 				L.DomEvent.preventDefault(e);
 			}
 
