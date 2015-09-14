@@ -49,6 +49,10 @@ L.extend(L.DomEvent, {
 
 	_addPointerStart: function (obj, handler, id) {
 		var onDown = L.bind(function (e) {
+			if (e.pointerType !== 'mouse') {
+				L.DomEvent.preventDefault(e);
+			}
+
 			this._handlePointer(e, handler);
 		}, this);
 
